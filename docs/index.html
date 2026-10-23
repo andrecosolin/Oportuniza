@@ -233,6 +233,19 @@ table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
 .tl .tt{flex:1 1 260px;font-weight:600;min-width:0}
 .tl [aria-pressed="true"]{background:var(--good-soft);color:var(--good-text);border-color:transparent}
 .pc.flash{box-shadow:0 0 0 3px var(--accent)}
+.pubbox{border-top:1px dashed var(--line);padding-top:12px}
+.pubbox>*+*{margin-top:12px}
+.fields2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+@media (max-width:560px){.fields2{grid-template-columns:1fr}}
+.pics{display:flex;gap:8px;flex-wrap:wrap}
+.pics figure{margin:0;width:96px;position:relative}
+.pics img{width:96px;height:96px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px;display:block}
+.pics figure .spin{position:absolute;top:38px;left:38px}
+.pics figcaption{font-size:11.5px;color:var(--muted);display:flex;gap:6px;justify-content:center;margin-top:2px}
+.req{color:var(--bad)}
+.chk1{display:flex;gap:8px;align-items:center;font-size:14px}
+.pubok{background:var(--good-soft);color:var(--good-text);border-radius:10px;padding:10px 12px;font-size:14px}
+.pubbox .err ul{margin:6px 0 0;padding-left:18px}
 .cin.dt{width:140px;font-size:13px}
 .vf{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:860px){.vf{grid-template-columns:1fr 1fr}.vf .in{grid-column:1/-1}}
@@ -426,6 +439,17 @@ async function api(route, qs, opts={}){
   if(r.status===401) throw {code:"login",message:j?.error||"Sessão expirada. Entre de novo."};
   if(!r.ok||(j&&j.error)) throw {code:"api",message:String(j?.error||("erro "+r.status))};
   cset(key,j); return j;
+}
+async function pub(body){
+  await mcpReady;
+  if(MODE!=="web") throw {code:"api",message:"Publicar no ML funciona pelo site do Oportuniza (andrecosolin.github.io/Oportuniza)."};
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw {code:"login",message:"Entre com seu e-mail para usar o Oportuniza."};
+  const r=await fetch(SB_URL+"/functions/v1/app",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+session.access_token,apikey:SB_KEY},body:JSON.stringify({route:"pub",body})});
+  let j; try{ j=await r.json(); }catch(_){ throw {code:"api",message:"Resposta inválida do servidor ("+r.status+")."}; }
+  if(r.status===401) throw {code:"login",message:j?.error||"Sessão expirada. Entre de novo."};
+  if(j&&j.error) throw {code:"api",message:String(j.error)};
+  return j;
 }
 async function rpc(fn,...args){
   await mcpReady;
@@ -1183,6 +1207,8 @@ function draftBlock(p){
     <textarea class="bmtext" id="dd_${id}" rows="12">${esc(d.description||"")}</textarea>
     <div class="row"><button class="btn sm pri" data-dsave="${id}">Salvar descrição</button><button class="btn sm" data-cp="${id}:desc">Copiar descrição</button><span class="note" id="dm_${id}" role="status">${d.edited_at?`editada ${dDate(d.edited_at)}`:"Preencha os [colchetes] antes de usar."}</span></div>
     <p class="note">Fotos e texto do concorrente não são copiados: são dele. Use as suas fotos e escreva com as suas palavras.</p>
+    ${d.published?`<div class="pubok">Anunciado no ML: <a href="${esc(d.published.permalink||("https://produto.mercadolivre.com.br/"+String(d.published.item_id).replace("MLB","MLB-")))}" target="_blank" rel="noopener">${esc(d.published.item_id)}</a> · ${d.published.status==="paused"?"pausado (ative no ML depois de revisar)":esc(d.published.status||"")} · ${dDate(d.published.at)}</div>`
+      :`<div class="row"><button class="btn pri" data-pub="${id}">Publicar no Mercado Livre</button><span class="note">Você revisa tudo antes. Nada vai para o ML sem o seu clique final.</span></div><div class="pubbox" id="pb_${id}" hidden></div>`}
     <textarea hidden id="dfi_${id}">${esc(fichaTxt)}</textarea>
   </details>`;
 }
@@ -1194,7 +1220,93 @@ function bindDrafts(out){
     try{ const r=await rpc("save_draft",Number(id),{chosen_title:t}); if(r?.error) throw {message:r.error}; p.draft.chosen_title=t; prodDeep=Number(id); renderProds(); }catch(e){ b.disabled=false; $("#dm_"+id).textContent=errMsg(e); } });
   out.querySelectorAll("[data-dsave]").forEach(b=>b.onclick=async()=>{ const id=b.dataset.dsave, p=prods.find(x=>String(x.id)===id), m=$("#dm_"+id), v=$("#dd_"+id).value; b.disabled=true; m.innerHTML=`<span class="spin"></span>Salvando…`;
     try{ const r=await rpc("save_draft",Number(id),{description:v}); if(r?.error) throw {message:r.error}; p.draft.description=v; p.draft.edited_at=new Date().toISOString(); m.textContent="Descrição salva."; }catch(e){ m.textContent=errMsg(e); } finally{ b.disabled=false; } });
+  out.querySelectorAll("[data-pub]").forEach(b=>b.onclick=()=>openPublish(Number(b.dataset.pub),b));
   out.querySelectorAll("details.draft").forEach(dt=>dt.ontoggle=()=>{ const id=Number(dt.id.slice(3)); if(dt.open) prodDeep=id; else if(prodDeep===id) prodDeep=null; });
+}
+/* ---------- publicar no ML ---------- */
+const PUBS={};
+function shrink(file){ return new Promise((res,rej)=>{ const img=new Image(), url=URL.createObjectURL(file);
+  img.onload=()=>{ const m=1600, k=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+    if(Math.min(c.width,c.height)<500) return rej(new Error(`${file.name}: foto pequena (${c.width}x${c.height}). O ML pede pelo menos 500 px.`));
+    res({data:c.toDataURL("image/jpeg",0.9).split(",")[1],w:c.width,h:c.height}); };
+  img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error(`${file.name}: não consegui abrir a imagem.`)); }; img.src=url; }); }
+function fieldInput(f,i){
+  const sid=`pf_${i}`, dl=f.values.length&&f.type!=="list"&&f.type!=="boolean"?`<datalist id="dl_${i}">${f.values.map(v=>`<option value="${esc(v.name)}">`).join("")}</datalist>`:"";
+  let ctl;
+  if(f.type==="list"||f.type==="boolean") ctl=`<select class="sel" id="${sid}" data-fid="${esc(f.id)}" data-kind="id"><option value="">${f.required?"escolha…":"(deixar em branco)"}</option>${f.values.map(v=>`<option value="${esc(v.id)}" ${f.suggested_id===v.id?"selected":""}>${esc(v.name)}</option>`).join("")}</select>`;
+  else if(f.type==="number_unit"){ const m=/([\d.,]+)\s*([a-zA-Zµ"']+)?/.exec(f.suggested||""); const u=(m&&m[2])||f.default_unit||f.units[0]||"";
+    ctl=`<div class="row" style="gap:6px;flex-wrap:nowrap"><div class="in" style="flex:1"><input id="${sid}" data-fid="${esc(f.id)}" data-kind="nu" inputmode="decimal" value="${m?esc(m[1]):""}" style="padding-left:9px"></div><select class="sel" id="${sid}_u" style="width:auto">${(f.units.length?f.units:[u]).map(x=>`<option ${x===u?"selected":""}>${esc(x)}</option>`).join("")}</select></div>`; }
+  else ctl=`<div class="in"><input id="${sid}" data-fid="${esc(f.id)}" data-kind="name" ${dl?`list="dl_${i}"`:""} value="${esc(f.suggested||"")}" ${f.type==="number"?'inputmode="numeric"':""} style="padding-left:9px;font-family:var(--f-body)"></div>${dl}`;
+  return `<div class="f"><label for="${sid}">${esc(f.name)}${f.required?' <b class="req">*</b>':""}</label>${ctl}${f.hint?`<small class="muted">${esc(f.hint)}</small>`:""}</div>`;
+}
+async function openPublish(id,btn){
+  const box=$("#pb_"+id); if(!box) return;
+  if(!box.hidden&&PUBS[id]){ box.hidden=true; btn.textContent="Publicar no Mercado Livre"; return; }
+  box.hidden=false; btn.textContent="Fechar publicação"; box.innerHTML=`<span class="spin"></span>Buscando categoria e campos obrigatórios no ML…`;
+  let P; try{ P=await pub({action:"prepare",id}); }catch(e){ box.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`; return; }
+  const prod=prods.find(x=>Number(x.id)===id)||{}; const d=prod.draft||{};
+  const best=prod.eval?.offers?.find(o=>String(o.vendor_id)===String(prod.eval.best_vendor_id));
+  const S=PUBS[id]={P,pics:[],valid:false};
+  const title=d.chosen_title||P.title;
+  box.innerHTML=`
+    <p class="note">Categoria: <b>${esc(P.category.path.join(" › ")||P.category.name)}</b> (${esc(P.category.id)})</p>
+    <div class="f"><label for="pt_${id}">Título</label><div class="in"><input id="pt_${id}" maxlength="60" value="${esc(title)}" style="padding-left:9px;font-family:var(--f-body)"></div><small class="muted" id="ptc_${id}">${title.length}/60</small></div>
+    <div class="fields4">
+      <div class="f"><label for="pp_${id}">Preço (R$)</label><div class="in"><input id="pp_${id}" inputmode="decimal" value="${best?.price_ideal?String(best.price_ideal).replace(".",","):""}" placeholder="${P.ref_price?"concorrente "+String(P.ref_price).replace(".",","):""}" style="padding-left:9px"></div>${best?`<small class="muted">ideal pela sua margem: ${brl(best.price_ideal)}</small>`:""}</div>
+      <div class="f"><label for="pq_${id}">Estoque</label><div class="in"><input id="pq_${id}" inputmode="numeric" value="${best?.stock?Math.min(best.stock,50):""}" style="padding-left:9px"></div><small class="muted">quantas você consegue entregar</small></div>
+      <div class="f"><label for="pl_${id}">Tipo de anúncio</label><select id="pl_${id}" class="sel">${P.listing_types.map(t=>`<option value="${t.id}" ${t.id==="gold_special"?"selected":""}>${t.id==="gold_pro"?"Premium (parcelado sem juros)":"Clássico"}</option>`).join("")}</select></div>
+      <div class="f"><label for="pw_${id}">Garantia</label><div class="row" style="gap:6px;flex-wrap:nowrap"><select id="pwt_${id}" class="sel" style="width:auto"><option value="vendedor">do vendedor</option><option value="fabrica">de fábrica</option><option value="nenhuma">sem garantia</option></select><div class="in" style="flex:1"><input id="pw_${id}" inputmode="numeric" value="90" style="padding-left:9px"></div><span class="muted">dias</span></div></div>
+    </div>
+    <h3 class="h3">Fotos <span class="muted" style="font-weight:400">(suas, até ${P.category.max_pictures}; a primeira com fundo branco)</span></h3>
+    <div class="pics" id="pg_${id}"></div>
+    <label class="btn sm" style="width:max-content">Adicionar fotos<input type="file" id="pf_${id}" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+    <h3 class="h3">Ficha técnica <span class="muted" style="font-weight:400">(* obrigatório no ML; o que veio do concorrente está preenchido, confira com o seu produto)</span></h3>
+    <div class="fields2">${P.fields.map((f,i)=>fieldInput(f,id+"_"+i)).join("")}</div>
+    <h3 class="h3">Descrição</h3>
+    <textarea class="bmtext" id="pd_${id}" rows="10">${esc($("#dd_"+id)?.value??P.description)}</textarea>
+    <label class="chk1"><input type="checkbox" id="pz_${id}" checked><span>Publicar <b>pausado</b>, para eu revisar no ML antes de ativar</span></label>
+    <div class="row"><button class="btn" id="pv_${id}">Conferir com o ML</button><button class="btn pri" id="pgo_${id}" disabled>Publicar</button><span class="note" id="pm_${id}" role="status">Primeiro confira: o ML diz o que falta sem publicar nada.</span></div>
+    <div id="pr_${id}"></div>`;
+  const ti=$("#pt_"+id); ti.oninput=()=>{ $("#ptc_"+id).textContent=ti.value.length+"/60"; S.valid=false; $("#pgo_"+id).disabled=true; };
+  box.querySelectorAll("input,select,textarea").forEach(el=>{ if(el.id!=="pt_"+id) el.addEventListener("input",()=>{ S.valid=false; const g=$("#pgo_"+id); if(g) g.disabled=true; }); });
+  const drawPics=()=>{ $("#pg_"+id).innerHTML=S.pics.map((p,i)=>`<figure><img src="${esc(p.url||p.local)}" alt="foto ${i+1}">${p.busy?`<span class="spin"></span>`:""}<figcaption>${i===0?"principal":i+1}${i?` <button class="lnk" data-pup="${i}">↑</button>`:""} <button class="lnk" data-prm="${i}" aria-label="Tirar foto">✕</button></figcaption></figure>`).join("")||`<p class="note">Nenhuma foto ainda.</p>`;
+    $("#pg_"+id).querySelectorAll("[data-prm]").forEach(b=>b.onclick=()=>{ S.pics.splice(Number(b.dataset.prm),1); S.valid=false; $("#pgo_"+id).disabled=true; drawPics(); });
+    $("#pg_"+id).querySelectorAll("[data-pup]").forEach(b=>b.onclick=()=>{ const i=Number(b.dataset.pup); [S.pics[i-1],S.pics[i]]=[S.pics[i],S.pics[i-1]]; S.valid=false; $("#pgo_"+id).disabled=true; drawPics(); }); };
+  drawPics();
+  $("#pf_"+id).onchange=async e=>{ const files=[...e.target.files].slice(0,P.category.max_pictures-S.pics.length); e.target.value=""; const m=$("#pm_"+id);
+    for(const f of files){ const it={local:URL.createObjectURL(f),busy:true}; S.pics.push(it); drawPics();
+      try{ const z=await shrink(f); const r=await pub({action:"upload",data:z.data,type:"image/jpeg"}); if(!r.ok) throw new Error(r.error||"falhou"); it.id=r.id; it.url=r.url||it.local; it.busy=false; }
+      catch(err){ S.pics.splice(S.pics.indexOf(it),1); m.textContent=errMsg(err); }
+      drawPics(); }
+    S.valid=false; $("#pgo_"+id).disabled=true; };
+  const collect=()=>{ const attrs=[];
+    P.fields.forEach((f,i)=>{ const el=$("#pf_"+id+"_"+i); if(!el) return; const v=el.value.trim(); if(!v) return;
+      if(el.dataset.kind==="id") attrs.push({id:f.id,value_id:v});
+      else if(el.dataset.kind==="nu") attrs.push({id:f.id,value_name:v.replace(",",".")+" "+$("#pf_"+id+"_"+i+"_u").value});
+      else { const hit=f.values.find(x=>x.name.toLowerCase()===v.toLowerCase()); attrs.push(hit?{id:f.id,value_id:hit.id}:{id:f.id,value_name:v}); } });
+    const wt=$("#pwt_"+id).value;
+    return {category_id:P.category.id,title:$("#pt_"+id).value.trim(),price:n2($("#pp_"+id).value),quantity:Number($("#pq_"+id).value.replace(/\D/g,"")),listing_type_id:$("#pl_"+id).value,
+      warranty_type:wt,warranty_days:wt==="nenhuma"?0:Number($("#pw_"+id).value.replace(/\D/g,""))||0,pictures:S.pics.filter(p=>p.id).map(p=>p.id),attributes:attrs,description:$("#pd_"+id).value,paused:$("#pz_"+id).checked,product_id:id}; };
+  const missing=()=>{ const out=[]; P.fields.forEach((f,i)=>{ const el=$("#pf_"+id+"_"+i); if(f.required&&el&&!el.value.trim()) out.push(f.name); }); return out; };
+  const showRes=(r,okTxt)=>{ const box2=$("#pr_"+id);
+    box2.innerHTML=r.ok?`<div class="pubok">${okTxt}${r.fee!=null?` Tarifa do ML nesse preço: ${brl(r.fee)}${r.fee_pct?` (${String(r.fee_pct).replace(".",",")}%)`:""}.`:""}</div>`
+      :`<div class="err"><b>${esc(r.message||r.error||"O ML apontou problemas:")}</b>${(r.causes||[]).length?`<ul>${r.causes.map(c=>`<li>${c.type==="warning"?"Aviso: ":""}${esc(c.message)}</li>`).join("")}</ul>`:""}</div>`; };
+  $("#pv_"+id).onclick=async()=>{ const m=$("#pm_"+id), b=$("#pv_"+id); const miss=missing();
+    if(S.pics.some(p=>p.busy)){ m.textContent="Espere as fotos terminarem de subir."; return; }
+    if(miss.length){ m.textContent="Falta preencher: "+miss.join(", ")+"."; return; }
+    const ph=($("#pd_"+id).value.match(/\[[^\]\n]{1,60}\]/g)||[]); if(ph.length){ m.textContent=`A descrição ainda tem ${ph.length} campo(s) entre colchetes, como ${ph[0]}. Complete antes de publicar.`; return; }
+    if(!S.pics.some(p=>p.id)){ m.textContent="Adicione pelo menos uma foto sua."; return; }
+    b.disabled=true; m.innerHTML=`<span class="spin"></span>Conferindo com o ML…`;
+    try{ const r=await pub({action:"validate",...collect()}); showRes(r,"O ML aceitou: está tudo certo para publicar."); S.valid=!!r.ok; $("#pgo_"+id).disabled=!r.ok; m.textContent=r.ok?"Pode publicar.":"Corrija e confira de novo."; }
+    catch(e){ m.textContent=errMsg(e); } finally{ b.disabled=false; } };
+  $("#pgo_"+id).onclick=async()=>{ const g=$("#pgo_"+id), m=$("#pm_"+id); if(!S.valid) return;
+    if(g.dataset.ok!=="1"){ g.dataset.ok="1"; g.textContent=$("#pz_"+id).checked?"Toque de novo: publicar pausado":"Toque de novo: publicar e ativar"; return; }
+    g.disabled=true; m.innerHTML=`<span class="spin"></span>Publicando no ML…`;
+    try{ const r=await pub({action:"publish",...collect()});
+      if(!r.ok){ showRes(r); g.dataset.ok=""; g.textContent="Publicar"; m.textContent="O ML não aceitou."; return; }
+      prod.draft={...(prod.draft||{}),published:r}; prod.linked_item_id=r.item_id; delete PUBS[id]; renderProds(); }
+    catch(e){ m.textContent=errMsg(e); g.disabled=false; g.dataset.ok=""; g.textContent="Publicar"; } };
 }
 async function evalProd(id,fresh){
   const m=$("#pmsg_"+id); if(m) m.innerHTML=`<span class="spin"></span>avaliando no Mercado Livre…`;
