@@ -37,6 +37,7 @@ tools/bookmarklet-goboox.js  botão de favoritos que importa custos da GoBoox
 - **Leituras e gravações rápidas:** RPC `public.op_call(fn, a)`, que confere o dono e chama as funções do schema `radar`.
 - **Mercado Livre, financeiro e avaliações:** Edge Function `app`, que confere o dono e repassa para `ml`, `fin` e `saude` com a chave interna.
 - **Extensão:** lê as páginas do ML e do Quem Fornece e envia para a função `sup`. A chave fica no próprio Chrome (copie em Minha conta > Acessos).
+- **Anúncio do concorrente:** o painel mostra desde quando ele está no ar (data da avaliação mais antiga, porque o ML não publica a data de criação), avaliações do último mês e reclamações (1 a 3 estrelas). O botão **Criar anúncio melhor** monta um rascunho em Produtos: títulos sugeridos, palavras-chave, ficha técnica, reclamações dos compradores, checklist e descrição base. Fotos e texto do concorrente não são copiados.
 
 Nenhuma chave fica no repositório: todas são geradas no banco e lidas depois do login.
 

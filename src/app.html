@@ -210,6 +210,17 @@ table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
 .chk{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
 .chk label{display:flex;gap:6px;align-items:center}
 .h3{font:700 15px var(--f-display);margin:4px 0 0}
+.draft{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--sunk)}
+.draft summary{cursor:pointer;font-size:14px;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.draft summary::before{content:"▸";color:var(--act-text)}
+.draft[open] summary::before{content:"▾"}
+.draft[open]>*+*{margin-top:10px}
+.draft .nl{color:var(--ink)}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tl li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.tl .tt{flex:1 1 260px;font-weight:600;min-width:0}
+.tl [aria-pressed="true"]{background:var(--good-soft);color:var(--good-text);border-color:transparent}
+.pc.flash{box-shadow:0 0 0 3px var(--accent)}
 .cin.dt{width:140px;font-size:13px}
 .vf{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:860px){.vf{grid-template-columns:1fr 1fr}.vf .in{grid-column:1/-1}}
@@ -1074,15 +1085,22 @@ const KINDS=[["indefinido","Sem perfil"],["perene","Perene"],["sazonal","Sazonal
 const SIGS=[["busca_crescendo","Busca crescendo (Google Trends)"],["videos_crescendo","Vídeos crescendo (TikTok, Reels)"],["anuncios_pagos","Anúncios pagos frequentes"],["comentarios_compra","Comentários com intenção de compra"],["recompra","Tem recompra"]];
 const MES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
 const KLASS={"Prioridade alta":"full","Testar":"warn","Observar":"","Evitar por enquanto":"bad"};
-let prodLoaded=false, prods=[], prodFilter="todos", prodOpen=null, vendCache=null;
+let prodLoaded=false, prods=[], prodFilter="todos", prodOpen=null, prodDeep=null, vendCache=null;
 const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
 const sqlStr=o=>JSON.stringify(o).replace(/'/g,"''");
 async function loadVendCache(force){ if(!vendCache||force) vendCache=await rpc("vendors_list")||[]; return vendCache; }
 async function loadProds(){
   prodLoaded=true; const out=$("#prodList"); loading(out,"Carregando produtos…");
-  try{ prods=await rpc("products_list")||[]; renderProds(); }
+  try{ prods=await rpc("products_list")||[]; renderProds(); focusDeep(); }
   catch(e){ prodLoaded=false; fail(out,e,loadProds); }
 }
+function focusDeep(){ if(!prodDeep) return; const p=prods.find(x=>Number(x.id)===prodDeep); if(!p) return;
+  if(p.stage==="descartado"||(prodFilter!=="todos"&&prodFilter!==p.stage)){ prodFilter=p.stage==="descartado"?"descartado":"todos"; renderProds(); }
+  const el=$("#pc_"+prodDeep); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),2200); }
+  if(!p.eval) evalProd(prodDeep,false); }
+function readHash(){ let id=(/#prod=(\d+)/.exec(location.hash)||[])[1]; try{ id=id||localStorage.getItem("opz-prod"); localStorage.removeItem("opz-prod"); }catch(_){}
+  if(!id) return false; prodDeep=Number(id); if(location.hash) history.replaceState(null,"",location.pathname+location.search); prodLoaded=false; show("prods"); return true; }
+window.addEventListener("hashchange",()=>{ mcpReady.then(readHash); });
 $("#pAddForm").onsubmit=async e=>{ e.preventDefault(); const name=$("#pNew").value.trim(); if(!name) return;
   $("#pAddBtn").disabled=true;
   try{ const r=await rpc("save_product",{name,ml_query:name}); $("#pNew").value=""; prodOpen=Number(r?.id)||null; await loadProds(); if(prodOpen) evalProd(prodOpen,true); }
@@ -1099,6 +1117,7 @@ function renderProds(){
   out.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>evalProd(Number(b.dataset.ev),true));
   out.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.ed); prodOpen=prodOpen===id?null:id; renderProds();});
   out.querySelectorAll("[data-mprod]").forEach(b=>b.onclick=()=>openProduct(b.dataset.mprod));
+  bindDrafts(out);
   if(prodOpen) initEditor(prods.find(p=>Number(p.id)===prodOpen));
 }
 function bars(pt){ const L=[["Demanda","demanda",30],["Margem","margem",25],["Concorrência","concorrencia",15],["Logística","logistica",15],["Fornecedor","fornecedor",10],["Conteúdo","conteudo",5]];
@@ -1121,9 +1140,49 @@ function prodCard(p){
       ${e.market?`<div class="mk">Comparado com: <button class="lnk" data-mprod="${esc(e.market.product_id)}">${esc(e.market.name)}</button> · de ${brl(e.market.min)} a ${brl(e.market.max)} · frete ${brl(e.ship_at_market)} (${esc(e.ship_basis)})${(e.demand_why||[]).length?` · demanda: ${esc(e.demand_why.join(", "))}`:""}</div>`:""}
       ${(e.notes||[]).length?`<ul class="nl">${e.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}`
     :`<p class="note">Ainda não avaliado.</p>`}
+    ${p.draft?draftBlock(p):""}
     <div class="row"><button class="btn sm pri" data-ev="${id}">${e?"Reavaliar":"Avaliar"}</button><button class="btn sm" data-ed="${id}" aria-expanded="${open}">${open?"Fechar":"Editar e fornecedores"}</button><span class="note" id="pmsg_${id}" role="status">${e?`avaliado ${new Date(e.at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
     ${open?`<div class="ped" id="ped_${id}"><span class="spin"></span>Carregando…</div>`:""}
   </div>`;
+}
+const dDate=iso=>iso?new Date(iso).toLocaleDateString("pt-BR"):"—";
+const ageOf=d=>{ if(d==null) return ""; const y=Math.floor(d/365), m=Math.floor((d%365)/30); return y?`${y} ano${y>1?"s":""}${m?` e ${m} ${m>1?"meses":"mês"}`:""}`:m?`${m} ${m>1?"meses":"mês"}`:`${d} dias`; };
+function draftBlock(p){
+  const d=p.draft, f=d.from||{}, id=Number(p.id), open=prodDeep===id;
+  const fichaTxt=(d.attributes||[]).map(a=>`${a.name}: ${a.value}`).join("\n");
+  return `<details class="draft" id="dr_${id}" ${open?"open":""}><summary><b>Rascunho do anúncio</b> <span class="muted">a partir de um concorrente · ${dDate(d.created_at)}</span></summary>
+    <div class="kv kv4">
+      <div><small>Concorrente</small><b>${f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.item_id||"anúncio")}</a>`:esc(f.item_id||"—")}</b></div>
+      <div><small>Preço · vendidos</small><b>${brl(f.price)} · ${esc(f.sold_label||"—")}</b></div>
+      <div><small>No ar desde (pelo menos)</small><b>${f.first_review?dDate(f.first_review):"—"}</b>${f.oldest_days!=null?`<small>${ageOf(f.oldest_days)}</small>`:""}</div>
+      <div><small>Avaliações no mês (est.)</small><b>${f.last30_reviews_est!=null?int(f.last30_reviews_est):"—"}</b></div>
+      <div><small>Reclamações (≤3★)</small><b>${f.neg_count!=null?int(f.neg_count)+(f.neg_pct!=null?` · ${String(f.neg_pct).replace(".",",")}%`:""):"—"}</b></div>
+      <div><small>Fotos · vídeo</small><b>${int(f.photos)} · ${f.has_video?"tem":"não tem"}</b></div>
+      <div><small>Ficha técnica</small><b>${int(f.attributes_count)} campos</b></div>
+      <div><small>Full · frete grátis</small><b>${f.full?"Full":"não"} · ${f.free_shipping?"sim":"não"}</b></div>
+    </div>
+    <h3 class="h3">Títulos sugeridos <span class="muted" style="font-weight:400">(até 60 letras, com as palavras dos anúncios que mais vendem${d.related_listings?`, ${int(d.related_listings)} lidos pela extensão`:""})</span></h3>
+    <ul class="tl">${(d.titles||[]).map((t,i)=>`<li><span class="tt">${esc(t)}</span><small class="muted">${t.length}/60</small><button class="btn sm" data-cp="${id}:t${i}">Copiar</button><button class="btn sm" data-pick="${id}:${i}" aria-pressed="${d.chosen_title===t}">${d.chosen_title===t?"✓ escolhido":"Usar este"}</button></li>`).join("")}</ul>
+    ${(d.keywords||[]).length?`<div class="filt" aria-label="Palavras-chave">${d.keywords.map(k=>`<span class="chip sm">${esc(k)}</span>`).join("")}</div>`:""}
+    ${(d.checklist||[]).length?`<h3 class="h3">Para ficar melhor que ele</h3><ul class="nl">${d.checklist.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>`:""}
+    ${(d.pains||[]).length?`<h3 class="h3">Do que os compradores dele reclamam</h3><ul class="nl">${d.pains.map(x=>`<li><b>${esc(x.word)}</b> (${int(x.count)}x)${x.example?` <span class="muted">“${esc(x.example)}…”</span>`:""}</li>`).join("")}</ul>`:""}
+    ${(d.attributes||[]).length?`<h3 class="h3">Ficha técnica dele <button class="btn sm" data-cp="${id}:ficha">Copiar</button></h3><div class="scroll"><table class="fin"><tbody>${d.attributes.map(a=>`<tr><td class="name">${esc(a.name)}</td><td>${esc(a.value)}</td></tr>`).join("")}</tbody></table></div><p class="note">Confira cada campo com o seu produto antes de usar: a ficha precisa descrever o que você vende.</p>`:""}
+    <h3 class="h3">Descrição base</h3>
+    <textarea class="bmtext" id="dd_${id}" rows="12">${esc(d.description||"")}</textarea>
+    <div class="row"><button class="btn sm pri" data-dsave="${id}">Salvar descrição</button><button class="btn sm" data-cp="${id}:desc">Copiar descrição</button><span class="note" id="dm_${id}" role="status">${d.edited_at?`editada ${dDate(d.edited_at)}`:"Preencha os [colchetes] antes de usar."}</span></div>
+    <p class="note">Fotos e texto do concorrente não são copiados: são dele. Use as suas fotos e escreva com as suas palavras.</p>
+    <textarea hidden id="dfi_${id}">${esc(fichaTxt)}</textarea>
+  </details>`;
+}
+async function copyTxt(t,msgEl){ try{ await navigator.clipboard.writeText(t); if(msgEl) msgEl.textContent="Copiado."; }catch(_){ if(msgEl) msgEl.textContent="Não deu para copiar: selecione e copie à mão."; } }
+function bindDrafts(out){
+  out.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{ const [id,w]=b.dataset.cp.split(":"); const p=prods.find(x=>String(x.id)===id); if(!p) return; const m=$("#dm_"+id);
+    const t=w==="desc"?$("#dd_"+id).value:w==="ficha"?$("#dfi_"+id).value:p.draft.titles[Number(w.slice(1))]; copyTxt(t,m); });
+  out.querySelectorAll("[data-pick]").forEach(b=>b.onclick=async()=>{ const [id,i]=b.dataset.pick.split(":"); const p=prods.find(x=>String(x.id)===id); const t=p.draft.titles[Number(i)]; b.disabled=true;
+    try{ const r=await rpc("save_draft",Number(id),{chosen_title:t}); if(r?.error) throw {message:r.error}; p.draft.chosen_title=t; prodDeep=Number(id); renderProds(); }catch(e){ b.disabled=false; $("#dm_"+id).textContent=errMsg(e); } });
+  out.querySelectorAll("[data-dsave]").forEach(b=>b.onclick=async()=>{ const id=b.dataset.dsave, p=prods.find(x=>String(x.id)===id), m=$("#dm_"+id), v=$("#dd_"+id).value; b.disabled=true; m.innerHTML=`<span class="spin"></span>Salvando…`;
+    try{ const r=await rpc("save_draft",Number(id),{description:v}); if(r?.error) throw {message:r.error}; p.draft.description=v; p.draft.edited_at=new Date().toISOString(); m.textContent="Descrição salva."; }catch(e){ m.textContent=errMsg(e); } finally{ b.disabled=false; } });
+  out.querySelectorAll("details.draft").forEach(dt=>dt.ontoggle=()=>{ const id=Number(dt.id.slice(3)); if(dt.open) prodDeep=id; else if(prodDeep===id) prodDeep=null; });
 }
 async function evalProd(id,fresh){
   const m=$("#pmsg_"+id); if(m) m.innerHTML=`<span class="spin"></span>avaliando no Mercado Livre…`;
@@ -1322,6 +1381,8 @@ $("#lgForm").onsubmit=async e=>{ e.preventDefault(); const email=$("#lgEmail").v
   catch(err){ $("#lgMsg").textContent="Não deu para enviar: "+(err.message||err); }
   finally{ $("#lgBtn").disabled=false; } };
 async function logout(){ if(sb){ await sb.auth.signOut(); } await invalidateCache(); location.reload(); }
+// o link da extensão (#prod=ID) precisa sobreviver ao login por e-mail (que abre em outra aba)
+try{ const m=/#prod=(\d+)/.exec(location.hash); if(m) localStorage.setItem("opz-prod",m[1]); }catch(_){}
 mcpReady=(async()=>{
   try{ if(window.claude?.use){ mcp=await window.claude.use("mcp"); if(mcp){ MODE="mcp"; return; } } }catch(_){ mcp=null; }
   MODE="web";
@@ -1337,6 +1398,7 @@ mcpReady=(async()=>{
 })();
 (async()=>{
   await mcpReady;
+  readHash();
   try{ const s=await api("status","",{stale:300000}); $("#acctDot").className="dot "+(s.linked?"on":"off"); $("#acctTxt").textContent=s.linked?(s.account?.nickname||"Conta vinculada"):"Conta ML não vinculada"; }
   catch(e){ $("#acctDot").className="dot off"; $("#acctTxt").textContent=e.code==="server_not_connected"?"Conecte o Supabase":e.code==="login"?"Sem acesso":"Sem conexão"; }
 })();

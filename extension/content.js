@@ -9,6 +9,23 @@
   const brlS = (v) => v == null ? "–" : "R$ " + short(v);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const median = (a) => { const s = a.filter((x) => x != null).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const APP = "https://andrecosolin.github.io/Oportuniza/";
+  const askReviews = (id) => new Promise((res) => { try { chrome.runtime.sendMessage({ type: "reviews", id }, (r) => res(r || { ok: false })); } catch (e) { res({ ok: false }); } });
+  const ageTxt = (d) => { if (d == null) return "–"; const y = Math.floor(d / 365), m = Math.floor((d % 365) / 30); if (y) return `${y} ano${y > 1 ? "s" : ""}${m ? ` e ${m} ${m > 1 ? "meses" : "mês"}` : ""}`; if (m) return `${m} ${m > 1 ? "meses" : "mês"}`; return `${d} dia${d === 1 ? "" : "s"}`; };
+  const dBR = (iso) => iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "";
+  function summarizeReviews(items, totalReviews) {
+    const now = Date.now();
+    const days = items.map((x) => (x.created ? Math.floor((now - Date.parse(x.created)) / 864e5) : P.relDays(x.date))).filter((d) => d != null && !isNaN(d));
+    const oldest = days.length ? Math.max(...days) : null;
+    const first = items.map((x) => x.created).filter(Boolean).sort()[0] || null;
+    const pos = items.filter((x) => x.rating >= 4);
+    const last30 = items.filter((x) => x.rating >= 4 && x.created && now - Date.parse(x.created) < 30 * 864e5).length;
+    const neg = items.filter((x) => x.rating <= 3 && x.text);
+    const negTotal = items.filter((x) => x.rating <= 3).length;
+    const factor = totalReviews && items.length ? totalReviews / items.length : 1;
+    const negLast90 = neg.filter((x) => x.created && now - Date.parse(x.created) < 90 * 864e5).length;
+    return { scanned: items.length, first_review: first, oldest_days: oldest, last30_comments: last30, last30_reviews_est: Math.round(last30 * (totalReviews && pos.length ? Math.max(1, (totalReviews - negTotal) / pos.length) : factor)), neg_count: negTotal, neg_pct: items.length ? Math.round((negTotal / items.length) * 1000) / 10 : null, neg_last90: negLast90, negatives: neg.map((x) => x.text).slice(0, 40) };
+  }
   const send = (body) => new Promise((res) => { try { chrome.runtime.sendMessage({ type: "radar", body }, (r) => res(r || { ok: false, error: chrome.runtime.lastError?.message || "sem resposta" })); } catch (e) { res({ ok: false, error: String(e.message || e) }); } });
 
   let panel;
@@ -92,31 +109,50 @@
     const x = P.parseItemPage(document, location);
     if (!x.item_id) return false;
     status("enviando…");
-    renderItem(x, null);
+    let rv = null, e = null, err = null;
+    const redraw = () => { renderItem(x, e, rv, err); lastRender = { list: false, fn: redraw }; };
+    redraw();
+    // avaliações (data no ar, ritmo, reclamações) não dependem da gravação no Oportuniza
+    askReviews(x.item_id).then((res) => { if (res.ok) { rv = summarizeReviews(res.data.items, x.reviews); redraw(); } });
     const r = await send({ kind: "snap", page: "item", items: [x] });
-    if (!r.ok) { status("erro"); body(`<p class="rml-err">Não consegui falar com o Oportuniza: ${esc(r.error)}</p>`); return true; }
+    if (!r.ok) { status("sem registro"); err = r.error; redraw(); return true; }
     status(r.paused ? "pausado (só leitura)" : "registrado");
-    const e = r.data.items?.[x.item_id];
-    renderItem(x, e);
-    lastRender = { list: false, fn: () => renderItem(x, e) };
+    e = r.data.items?.[x.item_id];
+    redraw();
     return true;
   }
 
-  function renderItem(x, e) {
+  async function createDraft(x, rv, btn) {
+    btn.disabled = true;
+    if (!rv) { btn.textContent = "Lendo avaliações…"; const res = await askReviews(x.item_id); if (res.ok) rv = summarizeReviews(res.data.items, x.reviews); }
+    btn.textContent = "Lendo o anúncio…";
+    const full = P.parseListingFull(document, location);
+    const r = await send({ kind: "draft", listing: { ...full, reviews_total: x.reviews, rating: x.rating, sold_label: x.sold_label, sold_min: x.sold_min, oldest_days: rv?.oldest_days ?? null, first_review: rv?.first_review ?? null, neg_count: rv?.neg_count ?? null, neg_pct: rv?.neg_pct ?? null, last30_reviews_est: rv?.last30_reviews_est ?? null, negatives: rv?.negatives ?? [] } });
+    if (!r.ok) { btn.disabled = false; btn.textContent = "Tentar de novo"; status("erro: " + r.error); return; }
+    btn.textContent = "✓ Rascunho criado no Oportuniza";
+    window.open(APP + "#prod=" + r.data.id, "_blank", "noopener");
+  }
+
+  function renderItem(x, e, rv, err) {
     const total = x.reviews ? x.reviews * 10 : null;
     const best = Math.max(x.sold_min || 0, total || 0) || null;
-    body(`
+    const perMonth = e?.est_month != null ? "~" + int(e.est_month) + "/mês" : rv && rv.last30_reviews_est ? "~" + int(rv.last30_reviews_est * 10) + "/mês" : "–";
+    body(`${err ? `<p class="rml-err">Não consegui falar com o Oportuniza: ${esc(err)}</p>` : ""}
       <div class="rml-sub">${esc(x.item_id)}${x.seller_name ? " · " + esc(x.seller_name) : ""}${x.full ? " · Full" : ""}</div>
       <div class="rml-grid">
         <div><small>Preço</small><b>${brl(x.price, 2)}</b></div>
         <div><small>Vendidos (ML)</small><b>${esc(x.sold_label || "–")}</b></div>
         <div><small>Avaliações</small><b>${int(x.reviews)}${x.rating ? " · " + x.rating : ""}</b></div>
         <div><small>Vendas totais (est.)</small><b>${short(best)}</b></div>
-        <div><small>Faturamento total (est.)</small><b>${best && x.price ? brlS(best * x.price) : "–"}</b></div>
-        <div><small>Ritmo atual</small><b>${e?.est_month != null ? "~" + int(e.est_month) + "/mês" : "–"}</b></div>
+        <div><small>Faturamento (est.)</small><b>${best && x.price ? brlS(best * x.price) : "–"}</b></div>
+        <div><small>Ritmo (est.)</small><b>${perMonth}</b></div>
+        <div><small>No ar desde</small><b>${rv ? (rv.first_review ? dBR(rv.first_review) : "–") : "…"}</b>${rv && rv.oldest_days != null ? `<small>pelo menos ${ageTxt(rv.oldest_days)}</small>` : ""}</div>
+        <div><small>Avaliações no mês</small><b>${rv ? int(rv.last30_reviews_est) : "…"}</b></div>
+        <div><small>Reclamações (≤3★)</small><b>${rv ? int(rv.neg_count) + (rv.neg_pct != null ? ` · ${String(rv.neg_pct).replace(".", ",")}%` : "") : "…"}</b></div>
       </div>
-      <p class="rml-note">${e ? (e.est_month != null ? `Ritmo calculado por ${esc(e.basis)} em ${Math.round(e.days_tracked)} dias de acompanhamento (${e.observations} leituras).` : e.observations > 1 ? `${e.observations} leituras em ${Math.max(1, Math.round(e.days_tracked))} dia(s), ainda sem variação para calcular o ritmo.` : "Primeira leitura deste anúncio. Abra de novo amanhã ou depois para o Oportuniza calcular vendas por dia.") : "…"}</p>
-      <p class="rml-note">Vendas totais: o maior entre a faixa do ML e avaliações × 10 (cerca de 1 em cada 10 compradores avalia).</p>`);
+      <button class="rml-btn" id="rmlDraft">Criar anúncio melhor</button>
+      <p class="rml-note">O ML não mostra a data de criação. “No ar desde” é a data da avaliação mais antiga${rv ? ` (li ${int(rv.scanned)} avaliações com comentário)` : ""}. Ritmo: ${e?.est_month != null ? `calculado por ${esc(e.basis)} entre leituras` : "avaliações do último mês × 10"}, é estimativa.</p>`);
+    const b = getPanel().querySelector("#rmlDraft"); if (b) b.onclick = () => createDraft(x, rv, b);
   }
 
   let lastRender = null;

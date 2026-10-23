@@ -78,5 +78,42 @@
     };
   }
 
-  root.RadarParse = { parseList, parseItemPage, soldToMin, itemIdFrom };
+  // Lê um array JSON embutido no HTML a partir de uma chave (o ML guarda a ficha técnica no estado da página).
+  function jsonArrayAfter(html, anchor, key) {
+    const i = html.indexOf(anchor); if (i < 0) return null;
+    const k = html.indexOf(key, i); if (k < 0 || k - i > 4000) return null;
+    let p = html.indexOf("[", k), depth = 0, inStr = false, esc = false;
+    for (let j = p; j < html.length && j < p + 200000; j++) {
+      const ch = html[j];
+      if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') inStr = true; else if (ch === "[") depth++; else if (ch === "]") { depth--; if (!depth) { try { return JSON.parse(html.slice(p, j + 1)); } catch { return null; } } }
+    }
+    return null;
+  }
+
+  // Tudo o que dá para ler de um anúncio para montar um anúncio melhor (sem copiar fotos nem texto).
+  function parseListingFull(doc, loc) {
+    const base = parseItemPage(doc, loc);
+    const html = doc.documentElement.innerHTML;
+    const specs = jsonArrayAfter(html, '"technical_specifications"', '"specs"') || [];
+    const attributes = [];
+    for (const g of specs) for (const a of g.attributes || []) if (a.id && a.text) attributes.push({ name: String(a.id).slice(0, 80), value: String(a.text).slice(0, 200), group: g.title || null });
+    const highlights = [...doc.querySelectorAll(".ui-vpp-highlighted-specs__features-list-item, .ui-vpp-highlighted-specs__key-value")].map((e) => e.textContent.trim()).filter(Boolean).slice(0, 12);
+    const pics = [...new Set((html.match(/https:\/\/http2\.mlstatic\.com\/D_[^"\\\s]+?-O\.(?:jpg|webp)/g) || []))];
+    const crumbs = [...doc.querySelectorAll(".andes-breadcrumb__item a, .andes-breadcrumb__link")].map((a) => a.textContent.trim()).filter(Boolean);
+    const cat = (html.match(/"category_id":"(MLB\d+)"/) || [])[1] || null;
+    const pid = productIdFrom(loc.href) || (html.match(/"parent_product_id":"(MLB\d+)"/) || [])[1] || null;
+    const desc = (doc.querySelector(".ui-pdp-description__content")?.innerText || "").trim();
+    const shipTxt = (doc.querySelector(".ui-pdp-media__title, .ui-pdp-shipping")?.textContent || "") + " " + doc.body.innerText.slice(0, 20000);
+    return { ...base, url: loc.href.split("#")[0], category_id: cat, category_path: crumbs, catalog_product_id: pid, attributes, highlights, description: desc.slice(0, 6000), description_len: desc.length, photos: pics.length, has_video: !!doc.querySelector(".ui-pdp-gallery__video, [class*='clip'], video"), free_shipping: /frete grátis|chegará grátis|envio grátis/i.test(shipTxt) };
+  }
+
+  // Avaliações públicas do anúncio (texto, nota e data relativa). Usadas para idade mínima, ritmo e reclamações.
+  const REL = { hoje: 0, ontem: 1 };
+  function relDays(t) {
+    t = String(t || "").toLowerCase().trim(); if (t in REL) return REL[t];
+    const m = /há\s+(\d+)\s+(dia|dias|semana|semanas|m[eê]s|meses|ano|anos)/.exec(t); if (!m) return null;
+    const n = +m[1], u = m[2]; return u.startsWith("dia") ? n : u.startsWith("semana") ? n * 7 : u.startsWith("m") ? n * 30 : n * 365;
+  }
+  root.RadarParse = { parseList, parseItemPage, parseListingFull, relDays, soldToMin, itemIdFrom };
 })(typeof window !== "undefined" ? window : globalThis);
