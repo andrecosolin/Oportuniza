@@ -294,3 +294,10 @@ CREATE INDEX cities_key ON radar.cities USING btree (key);
 CREATE INDEX item_snapshots_item_id_captured_at_idx ON radar.item_snapshots USING btree (item_id, captured_at DESC);
 CREATE INDEX item_snapshots_query_captured_at_idx ON radar.item_snapshots USING btree (query, captured_at DESC);
 CREATE INDEX item_snapshots_item_time ON radar.item_snapshots USING btree (item_id, captured_at);
+
+-- O schema radar não é exposto pela API; RLS ligado em tudo por segurança (as funções SECURITY DEFINER e as Edge Functions acessam como dono).
+do $$ declare t record; begin
+  for t in select tablename from pg_tables where schemaname = 'radar' loop
+    execute format('alter table radar.%I enable row level security', t.tablename);
+  end loop;
+end $$;
