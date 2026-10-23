@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E4D7B">
+<meta name="description" content="Oportuniza: achar produtos e fornecedores, avaliar margem e concorrência e acompanhar a loja no Mercado Livre.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Oportuniza</title>
+</head>
+<body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Oportuniza: azul = estrutura e confiança; laranja = ação e oportunidade; verde musgo = lucro e resultado. Fundo claro e quente, leve. */
+:root{
+  --bg:#F7F6F2; --surface:#FFFFFF; --sunk:#EFEDE6; --ink:#1B2430; --muted:#5A6270; --line:#E2DED4;
+  --accent:#1E4D7B; --accent-ink:#FFFFFF; --accent-soft:#DCE7F2;
+  --act:#E8692A; --act-ink:#1B2430; --act-text:#C2541B; --act-soft:#FCE6D8;
+  --amber:#9A4214; --amber-soft:#FCE6D8;
+  --good:#5E6B3A; --good-text:#46512A; --good-soft:#E6EAD8; --bad:#B42318; --bad-soft:#FBE3E1;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"DM Sans","Segoe UI",system-ui,sans-serif;
+  --f-num:"DM Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12161C; --surface:#1A2029; --sunk:#232B36; --ink:#E8EAEE; --muted:#9AA3AF; --line:#2E3744;
+  --accent:#8DB4DE; --accent-ink:#0E1620; --accent-soft:#1F3248;
+  --act:#F08A4B; --act-ink:#1B1208; --act-text:#F4A06B; --act-soft:#3A2416;
+  --amber:#F4A06B; --amber-soft:#3A2416;
+  --good:#A9B97A; --good-text:#C2D094; --good-soft:#2A311C; --bad:#F2837A; --bad-soft:#3C1916; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12161C; --surface:#1A2029; --sunk:#232B36; --ink:#E8EAEE; --muted:#9AA3AF; --line:#2E3744;
+  --accent:#8DB4DE; --accent-ink:#0E1620; --accent-soft:#1F3248;
+  --act:#F08A4B; --act-ink:#1B1208; --act-text:#F4A06B; --act-soft:#3A2416;
+  --amber:#F4A06B; --amber-soft:#3A2416;
+  --good:#A9B97A; --good-text:#C2D094; --good-soft:#2A311C; --bad:#F2837A; --bad-soft:#3C1916; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:10px}
+.brand{font:800 22px var(--f-display);letter-spacing:-.03em;display:flex;align-items:center;gap:9px;color:var(--accent)}
+.brand svg{width:30px;height:30px;flex:none}
+.acct{margin-left:auto;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)} .dot.on{background:var(--good)} .dot.off{background:var(--bad)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;width:100%;scrollbar-width:none}
+nav.tabs button{border:0;background:none;color:var(--muted);font:600 14px var(--f-body);padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+main{max-width:1180px;margin:0 auto;padding-block:20px 56px;display:flex;flex-direction:column;gap:18px}
+h1{font:800 clamp(26px,4.4vw,36px)/1.08 var(--f-display);margin:0;letter-spacing:-.03em;text-wrap:balance}
+h2{font:700 17px var(--f-display);margin:0}
+.lead{color:var(--muted);margin:4px 0 0;max-width:68ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0;font:16px var(--f-body);padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--f-body);padding:10px 14px;border-radius:12px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--act);border-color:var(--act);color:var(--act-ink)}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn:focus-visible,nav.tabs button:focus-visible,.chip:focus-visible,.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:500 13px var(--f-body);padding:5px 10px;border-radius:999px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.lbl{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media (max-width:700px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tiles>div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tiles strong{font:600 20px var(--f-num);font-variant-numeric:tabular-nums}
+.tiles small{color:var(--muted);font-size:12px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td.n,th.n{text-align:right;font-family:var(--f-num);white-space:nowrap}
+td.name{min-width:220px}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)}
+.lnk{color:var(--accent);text-decoration:none;font-weight:600;background:none;border:0;padding:0;font:inherit;cursor:pointer;text-align:left}
+.lnk:hover{text-decoration:underline}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.full{background:var(--good-soft);color:var(--good-text)}
+.pill.warn{background:var(--amber-soft);color:var(--amber)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.rep{display:inline-block;width:34px;height:6px;border-radius:3px;vertical-align:middle;background:var(--line);overflow:hidden}
+.rep i{display:block;height:100%}
+.mv{font:600 12px var(--f-num)} .mv.up{color:var(--good)} .mv.down{color:var(--bad)} .mv.new{color:var(--amber)}
+.meter{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:60px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.state{padding:28px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;background:var(--surface)}
+.state b{color:var(--ink);display:block;font:700 16px var(--f-display);margin-bottom:4px}
+.err{padding:12px 14px;border-radius:10px;background:var(--bad-soft);color:var(--ink);border:1px solid var(--line);font-size:14px}
+.note{font-size:13px;color:var(--muted);max-width:80ch}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:14px}
+.crumbs span{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:13px;font-weight:500}
+.in{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+.in span{padding:0 9px;color:var(--muted);font:13px var(--f-num)}
+.in input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:16px var(--f-num);padding:9px 9px 9px 0;outline:none}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.calc li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dotted var(--line);font-size:14px}
+.calc{list-style:none;margin:0;padding:0}
+.calc .v{font-family:var(--f-num)}
+.calc .tot{font-weight:700;border-top:1px solid var(--ink);border-bottom:0;padding-top:8px}
+.spark{width:100%;height:120px;display:block}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.pill.hot{background:var(--act-soft);color:var(--act-text)} .pill.warm{background:var(--amber-soft);color:var(--amber)} .pill.cold{background:var(--sunk);color:var(--muted)}
+.score{display:inline-block;min-width:38px;text-align:center;font:700 14px var(--f-num);padding:3px 6px;border-radius:7px;background:var(--sunk)}
+.score.s-quente{background:var(--act);color:var(--act-ink)} .score.s-morno{background:var(--accent);color:var(--accent-ink)}
+.sh{display:flex;flex-direction:column;gap:3px;min-width:84px}
+.sh span{font:500 13px var(--f-num)}
+.sh i{display:block;height:5px;border-radius:3px;background:var(--accent)}
+.muted{color:var(--muted)}
+.of{font-size:13px;color:var(--muted);font-weight:500}
+.tp{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tpb{border:0;background:var(--accent-soft);color:var(--accent);font:500 12px var(--f-body);padding:2px 8px;border-radius:6px;cursor:pointer;text-align:left}
+.tt{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.chip.sm{font-size:11.5px;padding:2px 8px}
+table.rank td{vertical-align:middle} table.rank td.name{min-width:260px}
+details.how{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+details.how summary{cursor:pointer;color:var(--ink);font-weight:600}
+details.how p{max-width:90ch}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:600 13px var(--f-body);padding:8px 12px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.bar2{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--sunk)} .bar2 i{display:block;height:100%}
+.legend2{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)} .legend2 b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.cin{width:78px;text-align:right;font:15px var(--f-num);padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.cin:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.cin::placeholder{color:var(--muted)}
+tr.rowbad td{background:var(--bad-soft)}
+table.fin td{vertical-align:middle}
+@media (max-width:640px){
+  table.fin thead{display:none}
+  table.fin,table.fin tbody{display:block}
+  table.fin tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  table.fin td{border:0;padding:0;display:flex;justify-content:space-between;align-items:center;gap:6px;text-align:right;min-width:0;white-space:nowrap}
+  table.fin td small{display:none}
+  table.fin .cin{width:64px}
+  table.fin td.name{grid-column:1/-1;display:block;text-align:left;min-width:0}
+  table.fin td[data-l]::before{content:attr(data-l);font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  table.fin tr.rowbad{background:var(--bad-soft);padding-inline:10px;border-radius:10px}
+  table.fin tr.rowbad td{background:none}
+}
+.fields4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.fields4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.fields4{grid-template-columns:1fr}}
+.cwrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.src{font:600 10.5px var(--f-body);letter-spacing:.03em;padding:1px 6px;border-radius:5px;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.src.sup{background:var(--accent-soft);color:var(--accent)} .src.man{background:var(--amber-soft);color:var(--amber)}
+.srcgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.srcgrid{grid-template-columns:1fr}}
+.srcbox{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--bg)}
+.srcbox h3,.impbox h3{font:700 15px var(--f-display);margin:0}
+.srcbox p{margin:0;font-size:14px}
+.steps{margin:0;padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.bmtext{width:100%;font:12px var(--f-num);border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:8px;resize:vertical;min-width:0}
+.suplist{display:flex;flex-direction:column;gap:6px}
+.sup{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:9px}
+.btn.sm{padding:6px 10px;font-size:13px} .btn.danger{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+label.btn{display:inline-block}
+.impbox{border:1px solid var(--accent);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;margin-top:12px}
+table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.cats button{text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 12px;border-radius:10px;font:500 14px var(--f-body);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.cats button:hover{border-color:var(--accent)}
+.cats small{color:var(--muted);font-family:var(--f-num);font-size:12px}
+.hl{display:flex;flex-direction:column;gap:0}
+.hi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.hi:last-child{border-bottom:0}
+.hi .t{font-weight:600;min-width:0}
+.hi .act{justify-self:end;align-self:start}
+.hi ul{grid-column:1/-1;margin:0;padding-left:18px;font-size:14px;color:var(--ink)}
+.hi ul li{margin:2px 0}
+.kv{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+@media (max-width:860px){.kv{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.kv div{background:var(--sunk);border-radius:8px;padding:6px 8px;min-width:0}
+.kv small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv b{font:600 14px var(--f-num);white-space:nowrap}
+.kv .sug{background:var(--accent-soft)} .kv .sug b{color:var(--accent)}
+.hi .mk{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.pill.a-pausar{background:var(--bad);color:var(--surface)} .pill.a-preco{background:var(--amber-soft);color:var(--amber)} .pill.a-anuncio{background:var(--amber-soft);color:var(--amber)}
+.pill.a-escalar{background:var(--good);color:var(--surface)} .pill.a-manter{background:var(--good-soft);color:var(--good-text)}
+.filt{display:flex;flex-wrap:wrap;gap:6px}
+.filt button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.prog{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden} .prog i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.fxrow{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;gap:8px;align-items:center}
+.fxrow input.nm{font:15px var(--f-body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+.qa{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.qa p{margin:0}
+.cal{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+@media (max-width:760px){.cal{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cal div{background:var(--sunk);border-radius:8px;padding:6px;min-height:52px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.cal div.now{outline:2px solid var(--accent)}
+.cal b{font:600 12px var(--f-body);text-transform:uppercase;color:var(--muted)}
+.cal span{font-size:11.5px;background:var(--amber-soft);color:var(--amber);border-radius:5px;padding:1px 5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .sc{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.pc .sc .score{font-size:20px;min-width:52px;padding:6px 8px}
+.rec{margin:0;font-size:15px;line-height:1.5;background:var(--act-soft);border-radius:12px;padding:12px 14px}
+.bars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.bars{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.bars small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.bars small b{color:var(--ink);font-family:var(--f-num)}
+.bars .meter{display:block;margin-top:3px}
+.kv4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.kv4 b{white-space:normal!important}
+@media (max-width:460px){.ped .fields4 .f{grid-column:auto!important}}
+@media (max-width:640px){table.offt .cin.dt{width:130px}}
+@media (max-width:760px){.kv4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+.pc .mk{font-size:12.5px;color:var(--muted)}
+.nl{margin:0;padding-left:18px;font-size:13px;color:var(--amber)}
+.ped{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:12px}
+.sel{font:15px var(--f-body);padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);min-width:0;max-width:100%}
+.sel.sm{font-size:13px;padding:5px 6px}
+.chk{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px}
+.chk label{display:flex;gap:6px;align-items:center}
+.h3{font:700 15px var(--f-display);margin:4px 0 0}
+.cin.dt{width:140px;font-size:13px}
+.vf{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:860px){.vf{grid-template-columns:1fr 1fr}.vf .in{grid-column:1/-1}}
+.vadd{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr) 70px auto;gap:8px}
+@media (max-width:640px){.vadd{grid-template-columns:1fr 70px}.vadd .in:first-child{grid-column:1/-1}.vadd button{grid-column:1/-1}}
+table.vt td{vertical-align:middle}
+tr.vrow td{background:var(--bg)}
+@media (max-width:640px){table.vt tr.vrow{display:block} table.vt tr.vrow td{display:block;text-align:left;white-space:normal} table.offt td .sel{width:100%}}
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.login[hidden]{display:none}
+.lgbox{max-width:520px;width:100%;display:flex;flex-direction:column;gap:16px}
+.lgbox .brand{font-size:30px}.lgbox .brand svg{width:44px;height:44px}
+.sr{position:absolute;left:-9999px}
+</style>
+
+<header class="bar gut">
+  <div class="bar-in">
+    <div class="brand"><svg viewBox="0 0 88 88" aria-hidden="true"><rect width="88" height="88" rx="24" fill="#E8692A"/><circle cx="42" cy="47" r="20" fill="none" stroke="#fff" stroke-width="9"/><path d="M52 22 L68 22 L68 38" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M55 35 L67 23" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>oportuniza</div>
+    <div class="acct" id="acct"><span class="dot" id="acctDot"></span><span id="acctTxt">Conectando…</span></div>
+    <nav class="tabs" role="tablist" aria-label="Seções">
+      <button role="tab" id="tab-pesquisa" aria-selected="true" data-v="pesquisa">Pesquisar</button>
+      <button role="tab" id="tab-nichos" aria-selected="false" data-v="nichos">Nichos</button>
+      <button role="tab" id="tab-produto" aria-selected="false" data-v="produto">Produto</button>
+      <button role="tab" id="tab-prods" aria-selected="false" data-v="prods">Produtos</button>
+      <button role="tab" id="tab-vend" aria-selected="false" data-v="vend">Fornecedores</button>
+      <button role="tab" id="tab-saude" aria-selected="false" data-v="saude">Saúde</button>
+      <button role="tab" id="tab-fin" aria-selected="false" data-v="fin">Financeiro</button>
+      <button role="tab" id="tab-conta" aria-selected="false" data-v="conta">Minha conta</button>
+    </nav>
+  </div>
+</header>
+
+<main class="gut">
+  <!-- PESQUISAR -->
+  <section id="v-pesquisa" role="tabpanel" aria-labelledby="tab-pesquisa">
+    <div class="card">
+      <div><h1>Pesquisar produto</h1><p class="lead">Digite o produto como o comprador buscaria. O Oportuniza procura no catálogo do Mercado Livre e mostra quantos vendedores disputam cada produto, a faixa de preço e quantos usam Full.</p></div>
+      <form class="search" id="fSearch"><input id="q" placeholder="Ex.: organizador de gaveta" autocomplete="off" aria-label="Produto"><button class="btn pri" id="bSearch">Pesquisar</button></form>
+      <div class="row" id="searchHints"><span class="lbl">Tente</span>
+        <button class="chip" data-q="mini tripé celular">mini tripé celular</button>
+        <button class="chip" data-q="lanterna de cabeça">lanterna de cabeça</button>
+        <button class="chip" data-q="raspador de língua">raspador de língua</button>
+        <button class="chip" data-q="organizador de gaveta">organizador de gaveta</button>
+      </div>
+    </div>
+    <div id="searchOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+  </section>
+
+  <!-- NICHOS -->
+  <section id="v-nichos" role="tabpanel" aria-labelledby="tab-nichos" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h1 id="lvTitle">Nichos</h1><p class="lead">Ranking dos nichos pela procura e pelas vendas, comparado com quantos anúncios já existem. Toque em um nicho para descer um nível e ver os produtos mais vendidos dele.</p></div>
+        <button class="btn" id="lvRef">Atualizar dados</button>
+      </div>
+      <div class="crumbs" id="crumbs"></div>
+    </div>
+    <div id="rankOut" style="margin-top:14px"><div class="state"><span class="spin"></span>Carregando ranking…</div></div>
+    <div id="nicheOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+  </section>
+
+  <!-- PRODUTO -->
+  <section id="v-produto" role="tabpanel" aria-labelledby="tab-produto" hidden>
+    <div id="prodOut"><div class="state"><b>Nenhum produto aberto</b>Abra um produto pela Pesquisa ou pelos Nichos para ver todos os vendedores, reputação, preços e simular sua margem.</div></div>
+  </section>
+
+  <!-- PRODUTOS CANDIDATOS -->
+  <section id="v-prods" role="tabpanel" aria-labelledby="tab-prods" hidden>
+    <div class="card">
+      <div><h1>Produtos</h1><p class="lead">Produtos que você está pensando em vender, do primeiro sinal até escalar. Cada um ganha uma nota de 0 a 100 (demanda, margem, concorrência, logística, fornecedor e conteúdo) e uma recomendação do que fazer.</p></div>
+      <form class="search" id="pAddForm"><input id="pNew" placeholder="Ex.: garrafa térmica 500 ml" autocomplete="off" aria-label="Nome do produto"><button class="btn pri" id="pAddBtn">Adicionar</button></form>
+      <span class="note" id="pAddMsg" role="status"></span>
+    </div>
+    <div id="prodList" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+  </section>
+
+  <!-- FORNECEDORES -->
+  <section id="v-vend" role="tabpanel" aria-labelledby="tab-vend" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start"><div><h1>Fornecedores</h1><p class="lead">GoBoox, fornecedores locais, atacadistas, fabricantes e importadores num lugar só, com a ficha de cada um e a distância até Araraquara.</p></div><button class="btn" id="vRef">Atualizar</button></div>
+      <form class="vadd" id="vAddForm"><div class="in"><input id="vNew" placeholder="Nome do fornecedor" style="padding-left:9px;font-family:var(--f-body)" aria-label="Nome do fornecedor"></div><div class="in"><input id="vCity" placeholder="Cidade" style="padding-left:9px;font-family:var(--f-body)" aria-label="Cidade"></div><div class="in"><input id="vUf" placeholder="UF" maxlength="2" style="padding-left:9px" aria-label="UF"></div><button class="btn pri">Cadastrar</button></form>
+      <span class="note" id="vAddMsg" role="status"></span>
+      <details class="how"><summary>Importar do Quem Fornece</summary><p>Com a extensão Oportuniza (versão 1.2) no Chrome, abra uma categoria no Quem Fornece (por exemplo “Produtos para Revenda no Mercado Livre” ou “Dropshipping Nacional”). Aparece um painel no canto com o botão <b>Importar todos para o Oportuniza</b>. Ele traz nome, cidade, tipo e site de todos os fornecedores da categoria. Preço, mínimo e prazo vêm depois, quando você pedir cotação e preencher a ficha.</p></details>
+    </div>
+    <div id="vendList" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+  </section>
+
+  <!-- SAÚDE -->
+  <section id="v-saude" role="tabpanel" aria-labelledby="tab-saude" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h1>Saúde dos anúncios</h1><p class="lead">Cada anúncio com visitas, conversão, margem, preço mínimo e ideal, comparado ao mercado, e o que fazer: anunciar, ajustar ou pausar.</p></div>
+        <button class="btn" id="hRef">Atualizar</button>
+      </div>
+    </div>
+    <div id="healthOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"><div class="state"><span class="spin"></span>Analisando…</div></div>
+    <div id="svcOut" style="margin-top:14px"></div>
+    <div id="oppOut" style="margin-top:14px"></div>
+    <div id="extOut" style="margin-top:14px"></div>
+  </section>
+
+  <!-- FINANCEIRO -->
+  <section id="v-fin" role="tabpanel" aria-labelledby="tab-fin" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h1>Financeiro</h1><p class="lead">Margem de contribuição de cada anúncio antes de vender (com a tarifa real do ML) e o resultado das vendas do período (com tarifa e frete reais de cada pedido).</p></div>
+        <div class="seg" role="group" aria-label="Período" id="finPer">
+          <button type="button" data-d="7" aria-pressed="false">7 dias</button><button type="button" data-d="30" aria-pressed="true">30 dias</button><button type="button" data-d="90" aria-pressed="false">90 dias</button>
+        </div>
+      </div>
+    </div>
+    <div id="finOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"><div class="state"><span class="spin"></span>Calculando…</div></div>
+  </section>
+
+  <!-- CONTA -->
+  <section id="v-conta" role="tabpanel" aria-labelledby="tab-conta" hidden>
+    <div id="contaOut"><div class="state"><span class="spin"></span>Carregando sua conta…</div></div>
+  </section>
+</main>
+
+<section id="login" class="login" hidden aria-labelledby="lgTitle">
+  <div class="lgbox">
+    <div class="brand"><svg viewBox="0 0 88 88" aria-hidden="true"><rect width="88" height="88" rx="24" fill="#E8692A"/><circle cx="42" cy="47" r="20" fill="none" stroke="#fff" stroke-width="9"/><path d="M52 22 L68 22 L68 38" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M55 35 L67 23" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/></svg>oportuniza</div>
+    <h1 id="lgTitle">O produto certo, do fornecedor certo, <span style="color:var(--act-text)">na hora de vender.</span></h1>
+    <p class="lead">Entre com seu e-mail. Você recebe um link de acesso, sem senha.</p>
+    <form class="search" id="lgForm"><label for="lgEmail" class="sr">E-mail</label><input id="lgEmail" type="email" autocomplete="email" placeholder="seu@email.com" required><button class="btn pri" id="lgBtn">Receber link</button></form>
+    <p class="note" id="lgMsg" role="status"></p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const PROJECT="dbikbgbgplosqwnovhvr", SERVER="Supabase";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl=v=>v==null||isNaN(v)?"—":"R$ "+Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const int=v=>v==null||isNaN(v)?"—":Number(v).toLocaleString("pt-BR");
+const pct=v=>v==null||isNaN(v)?"—":Number(v).toLocaleString("pt-BR",{maximumFractionDigits:1})+"%";
+const okId=s=>/^[A-Z0-9]+$/.test(s||"");
+const enc=s=>encodeURIComponent(s).replace(/'/g,"%27");
+let mcp=null, mcpReady=null;
+
+function errMsg(e){
+  const c=e&&e.code;
+  if(c==="server_not_connected"||c==="selection_required") return "O conector Supabase não está ativo para você. Adicione ou escolha o Supabase em Configurações → Conectores do claude.ai e recarregue.";
+  if(c==="needs_reauth") return "A conexão com o Supabase expirou. Reconecte em Configurações → Conectores do claude.ai.";
+  if(c==="not_in_manifest"||c==="approval_required") return "Esta página precisa da sua permissão para usar o Supabase. Toque em Tentar de novo e permita o acesso.";
+  if(c==="server_unavailable"||c==="upstream_error") return "O Supabase não respondeu a tempo. Tente de novo em alguns segundos.";
+  if(c==="tool_error") return "A consulta falhou no Supabase: "+(e.message||"").slice(0,200);
+  if(c==="login"){ setTimeout(()=>showLogin(e.message),0); return e.message||"Entre de novo."; }
+  return (e&&e.message)||"Não foi possível consultar.";
+}
+/* O conector devolve {result:"Aviso ... <untrusted-data-X> ... \n\n<untrusted-data-X>\n[linhas]\n</untrusted-data-X> ..."}.
+   A marca aparece primeiro dentro da frase de aviso, então o JSON fica entre a ÚLTIMA abertura antes do primeiro fechamento. */
+function parseRows(p){
+  if(Array.isArray(p)) return p;
+  let txt=typeof p==="string"?p:(p&&typeof p.result==="string")?p.result:(p&&Array.isArray(p.result))?null:JSON.stringify(p);
+  if(txt===null) return p.result;
+  const end=txt.indexOf("</untrusted-data");
+  if(end>=0){ const open=txt.lastIndexOf("<untrusted-data",end); const start=txt.indexOf(">",open)+1; txt=txt.slice(start,end); }
+  txt=txt.trim();
+  try{ return JSON.parse(txt); }
+  catch(_){ const a=txt.indexOf("["), b=txt.lastIndexOf("]"); if(a>=0&&b>a) return JSON.parse(txt.slice(a,b+1)); throw {code:"parse",message:"Resposta do Supabase em formato inesperado: "+txt.slice(0,160)}; }
+}
+/* Transporte: dentro do claude.ai usa o conector Supabase (MCP); no navegador comum usa login do Supabase
+   e a função "app" (rotas do ML) mais a RPC public.op_call (leituras e gravações). */
+const SB_URL="https://dbikbgbgplosqwnovhvr.supabase.co", SB_KEY="sb_publishable_q0n_Ugw7EtZ_UP_uLSrKlw_Cf_USrCO";
+let sb=null, MODE=null;
+const CACHE=new Map();
+function cget(k,stale){ try{ let e=CACHE.get(k); if(!e){ const raw=localStorage.getItem("opz:"+k); if(raw){ e=JSON.parse(raw); CACHE.set(k,e);} } if(e&&Date.now()-e.t<stale) return e.v; }catch(_){} return undefined; }
+function cset(k,v){ const e={t:Date.now(),v}; CACHE.set(k,e); try{ localStorage.setItem("opz:"+k,JSON.stringify(e)); }catch(_){ try{ Object.keys(localStorage).filter(x=>x.startsWith("opz:")).forEach(x=>localStorage.removeItem(x)); }catch(__){} } }
+async function invalidateCache(){ CACHE.clear(); try{ Object.keys(localStorage).filter(x=>x.startsWith("opz:")).forEach(x=>localStorage.removeItem(x)); }catch(_){} if(MODE==="mcp") await mcp?.invalidate?.(SERVER,"execute_sql").catch(()=>{}); }
+async function api(route, qs, opts={}){
+  await mcpReady;
+  if(MODE==="mcp"){
+    const query=`select radar.api('${route}', '${qs||""}') as r`;
+    const res=await mcp.callTool(SERVER,"execute_sql",{project_id:PROJECT,query},
+      {cache: opts.fresh?{staleTime:0,gcTime:3600000,refresh:true}:{staleTime:opts.stale??900000,gcTime:3600000}});
+    const rows=parseRows(res.payload);
+    let r=Array.isArray(rows)?rows[0]?.r:rows?.r;
+    if(typeof r==="string"){try{r=JSON.parse(r)}catch(_){}}
+    if(r&&r.error) throw {code:"api",message:String(r.error)};
+    return r;
+  }
+  const key=route+"?"+(qs||"");
+  if(!opts.fresh){ const c=cget(key,opts.stale??900000); if(c!==undefined) return c; }
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) throw {code:"login",message:"Entre com seu e-mail para usar o Oportuniza."};
+  const r=await fetch(SB_URL+"/functions/v1/app",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+session.access_token,apikey:SB_KEY},body:JSON.stringify({route,qs:qs||""})});
+  let j; try{ j=await r.json(); }catch(_){ throw {code:"api",message:"Resposta inválida do servidor ("+r.status+")."}; }
+  if(r.status===401) throw {code:"login",message:j?.error||"Sessão expirada. Entre de novo."};
+  if(!r.ok||(j&&j.error)) throw {code:"api",message:String(j?.error||("erro "+r.status))};
+  cset(key,j); return j;
+}
+async function rpc(fn,...args){
+  await mcpReady;
+  if(!/^[a-z_]+$/.test(fn)) throw {code:"api",message:"função inválida"};
+  if(MODE==="mcp"){
+    const lit=a=>a==null?"null":typeof a==="number"?String(Number(a)):typeof a==="object"?`'${JSON.stringify(a).replace(/'/g,"''")}'::jsonb`:`'${String(a).replace(/'/g,"''")}'`;
+    const query=fn==="keys"?`select jsonb_build_object('sup_key',(select v from radar.config where k='sup_key'),'ext_key',(select v from radar.config where k='ext_key'),'ml_login','${SB_URL}/functions/v1/ml/login?k='||(select v from radar.config where k='internal_key')) as r`:`select to_jsonb(radar.${fn}(${args.map(lit).join(", ")})) as r`;
+    const res=await mcp.callTool(SERVER,"execute_sql",{project_id:PROJECT,query},{cache:false});
+    const rows=parseRows(res.payload); return Array.isArray(rows)?rows[0]?.r:rows?.r;
+  }
+  const {data,error}=await sb.rpc("op_call",{fn,a:args});
+  if(error) throw {code:error.code==="42501"?"login":"api",message:error.code==="42501"?"Este e-mail não tem acesso ao Oportuniza.":error.message};
+  return data;
+}
+function loading(el,txt){el.innerHTML=`<div class="state"><span class="spin"></span>${esc(txt)}</div>`}
+function fail(el,e,retry){el.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`+(retry?`<div class="row" style="margin-top:8px"><button class="btn" id="retry_${el.id}">Tentar de novo</button></div>`:"");if(retry)$("#retry_"+el.id).onclick=retry;}
+const repColor=l=>!l?"var(--line)":l.startsWith("5")?"#1B9E4B":l.startsWith("4")?"#7BC043":l.startsWith("3")?"#F2C230":l.startsWith("2")?"#F28C30":"#D93B2B";
+const repW=l=>l?(parseInt(l)||0)*20:0;
+
+/* ---------- abas ---------- */
+const VIEWS=["pesquisa","nichos","produto","prods","vend","saude","fin","conta"];
+function show(v){VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v;$("#tab-"+x).setAttribute("aria-selected",x===v)});
+  if(v==="nichos"&&!catsLoaded) loadCats(); if(v==="conta"&&!contaLoaded) loadConta(); if(v==="fin"&&!finLoaded) loadFin(); if(v==="saude"&&!healthLoaded) loadSaude(); if(v==="prods"&&!prodLoaded) loadProds(); if(v==="vend"&&!vendLoaded) loadVend(); window.scrollTo({top:0});}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* ---------- pesquisa ---------- */
+$("#fSearch").onsubmit=e=>{e.preventDefault();doSearch($("#q").value.trim())};
+document.querySelectorAll("#searchHints .chip").forEach(c=>c.onclick=()=>{$("#q").value=c.dataset.q;doSearch(c.dataset.q)});
+async function doSearch(q){
+  if(!q) return; const out=$("#searchOut"); $("#bSearch").disabled=true;
+  loading(out,"Buscando no catálogo e contando os vendedores de cada produto (10 a 30 s)…");
+  try{
+    const r=await api("search","q="+enc(q));
+    const prods=(r.products||[]).filter(p=>p.offers>0);
+    const empty=(r.products||[]).length-prods.length;
+    out.innerHTML=`
+      <div class="tiles">
+        <div><span class="lbl">Produtos no catálogo</span><strong>${int(r.total_catalog)}</strong><small>para “${esc(q)}”</small></div>
+        <div><span class="lbl">Com vendedores ativos</span><strong>${prods.length}</strong><small>dos ${(r.products||[]).length} analisados</small></div>
+        <div><span class="lbl">Preço mediano</span><strong>${brl(med(prods.map(p=>p.median_price)))}</strong><small>entre os produtos ativos</small></div>
+        <div><span class="lbl">Vendedores por produto</span><strong>${int(med(prods.map(p=>p.offers)))}</strong><small>mediana</small></div>
+      </div>
+      ${(r.categories||[]).length?`<div class="card"><div class="row"><span class="lbl">Categoria provável</span>${r.categories.map(c=>`<button class="chip" data-cat="${esc(c.id)}">${esc(c.name)} →</button>`).join("")}</div>
+        ${(r.related_trends||[]).length?`<div class="row"><span class="lbl">Buscas em alta na categoria</span>${r.related_trends.map(t=>`<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}</div>`:""}
+      <div class="card"><h2>Produtos e concorrência</h2>
+        ${prods.length?`<div class="scroll"><table><thead><tr><th>Produto</th><th class="n">Vendedores</th><th class="n">Menor</th><th class="n">Mediano</th><th class="n">Maior</th><th class="n">Full</th><th class="n">Premium</th></tr></thead><tbody>
+        ${prods.map(p=>`<tr class="click" data-pid="${esc(p.id)}"><td class="name"><button class="lnk" data-pid="${esc(p.id)}">${esc(p.name)}</button><br><span class="pill">${esc(p.id)}</span> ${compPill(p.offers)}</td><td class="n">${int(p.offers)}</td><td class="n">${brl(p.min_price)}</td><td class="n">${brl(p.median_price)}</td><td class="n">${brl(p.max_price)}</td><td class="n">${pct(p.full_pct)}</td><td class="n">${pct(p.premium_pct)}</td></tr>`).join("")}
+        </tbody></table></div>`:`<div class="state"><b>Nenhum produto com vendedores ativos</b>Tente um termo mais genérico.</div>`}
+        ${empty?`<p class="note">${empty} produto(s) do catálogo sem vendedor ativo foram ocultados. Sem concorrente pode ser oportunidade, mas também pode ser produto sem procura.</p>`:""}
+      </div>`;
+    bindCommon(out);
+  }catch(e){fail(out,e,()=>doSearch(q))}
+  finally{$("#bSearch").disabled=false}
+}
+function compPill(n){ if(n==null) return ""; if(n<=5) return `<span class="pill full">pouca concorrência</span>`; if(n<=25) return `<span class="pill">concorrência média</span>`; return `<span class="pill warn">muito disputado</span>`; }
+function med(a){a=a.filter(x=>x!=null&&!isNaN(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
+function bindCommon(root){
+  root.querySelectorAll("[data-pid]").forEach(el=>el.onclick=ev=>{ev.stopPropagation();openProduct(el.dataset.pid)});
+  root.querySelectorAll("[data-cat]").forEach(el=>el.onclick=()=>{catsLoaded=true;show("nichos");
+    $("#rankOut").innerHTML=`<div class="state"><b>Produtos da categoria escolhida abaixo</b><button class="btn" id="goRank" style="margin-top:8px">Ver ranking de nichos</button></div>`;
+    $("#goRank").onclick=()=>openLevel("ROOT"); openNiche(el.dataset.cat)});
+  root.querySelectorAll("[data-q]").forEach(el=>{ if(el.closest("#searchHints")) return; el.onclick=()=>{show("pesquisa");$("#q").value=el.dataset.q;doSearch(el.dataset.q)}});
+}
+
+/* ---------- nichos ---------- */
+let catsLoaded=false, curLevel="ROOT";
+function loadCats(){ catsLoaded=true; openLevel("ROOT"); }
+function setCrumbs(path,current){
+  const parts=[`<button class="lnk" data-lv="ROOT">Todas</button>`].concat((path||[]).map(p=>`<span>/</span><button class="lnk" data-lv="${esc(p.id)}">${esc(p.name)}</button>`));
+  $("#crumbs").innerHTML=parts.join("");
+  $("#crumbs").querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>openLevel(b.dataset.lv));
+}
+const tierPill=t=>t==="Quente"?`<span class="pill hot">Quente</span>`:t==="Morno"?`<span class="pill warm">Morno</span>`:`<span class="pill cold">Frio</span>`;
+const shareBar=(v,max)=>v==null?`<span class="muted">—</span>`:`<div class="sh"><span>${pct(v)}</span><i style="width:${Math.max(2,Math.min(100,v/(max||1)*100))}%"></i></div>`;
+async function openLevel(cat,fresh){
+  if(cat!=="ROOT"&&!okId(cat)) return; curLevel=cat; const out=$("#rankOut");
+  loading(out,fresh?"Recalculando o ranking com dados de agora (10 a 30 s)…":"Montando o ranking dos nichos (até 30 s na primeira vez do dia)…");
+  if(cat==="ROOT") $("#nicheOut").innerHTML="";
+  try{
+    const r=await api("niches",`cat=${cat}${fresh?"&fresh=1":""}`,{fresh:!!fresh,stale:3600000});
+    $("#lvTitle").textContent=cat==="ROOT"?"Nichos":r.parent.name;
+    setCrumbs(cat==="ROOT"?[]:r.parent.path,cat);
+    const rows=r.rows||[]; const m=r.meta||{};
+    const hasSales=rows.some(x=>x.sales_share!=null);
+    const mx=k=>Math.max(...rows.map(x=>x[k]||0),0.01);
+    const hot=rows.filter(x=>x.tier==="Quente");
+    out.innerHTML=`<div style="display:flex;flex-direction:column;gap:14px">
+      <div class="tiles">
+        <div><span class="lbl">Nichos avaliados</span><strong>${rows.length}</strong><small>${cat==="ROOT"?"categorias principais":"subcategorias"}</small></div>
+        <div><span class="lbl">Quentes</span><strong>${hot.length}</strong><small>${hot.slice(0,2).map(x=>esc(x.name)).join(", ")||"nenhum hoje"}</small></div>
+        <div><span class="lbl">Buscas em alta lidas</span><strong>${int(m.trends_mapped)}<span class="of">/${int(m.trends_total)}</span></strong><small>classificadas por nicho</small></div>
+        <div><span class="lbl">Mais vendidos lidos</span><strong>${hasSales?int(m.sales_mapped)+`<span class="of">/${int(m.sales_total)}</span>`:"—"}</strong><small>${hasSales?"do ranking de vendas do ML":"o ML não publica no nível raiz"}</small></div>
+      </div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h2>Ranking de nichos</h2><span class="note">${r.cached?"Calculado hoje às "+(r.captured_at?new Date(r.captured_at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"—"):"Atualizado agora"}</span></div>
+        <div class="scroll"><table class="rank"><thead><tr><th class="n">#</th><th>Nicho</th><th class="n">Nota</th>${hasSales?`<th>% das vendas</th>`:""}<th>% da procura</th><th>% dos anúncios</th><th class="n">Oportunidade</th><th class="n">Concorrência</th><th class="n">Preço típico</th></tr></thead><tbody>
+        ${rows.map((x,i)=>`<tr class="click" data-open="${esc(x.category_id)}" data-kids="${x.children||0}">
+          <td class="n">${i+1}</td>
+          <td class="name"><button class="lnk" data-open="${esc(x.category_id)}" data-kids="${x.children||0}">${esc(x.name)}</button> ${tierPill(x.tier)} ${delta(x)}
+            ${(x.top_products||[]).length?`<div class="tp">${x.top_products.slice(0,3).map(p=>`<button class="tpb" data-pid="${esc(p.id)}">${esc(String(p.name||p.id).slice(0,48))}</button>`).join("")}</div>`:""}
+            ${(x.top_terms||[]).length?`<div class="tt">${x.top_terms.slice(0,4).map(t=>`<button class="chip sm" data-q="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}</td>
+          <td class="n"><span class="score s-${(x.tier||"").toLowerCase()}">${x.score??"—"}</span></td>
+          ${hasSales?`<td>${shareBar(x.sales_share,mx("sales_share"))}</td>`:""}
+          <td>${shareBar(x.search_share,mx("search_share"))}</td>
+          <td>${shareBar(x.supply_share,mx("supply_share"))}</td>
+          <td class="n">${x.opportunity==null?"—":x.opportunity.toLocaleString("pt-BR",{maximumFractionDigits:1})+"×"}</td>
+          <td class="n">${x.median_offers==null?"—":int(x.median_offers)+" vend."}</td>
+          <td class="n">${brl(x.median_price)}</td></tr>`).join("")}
+        </tbody></table></div>
+        <details class="how"><summary>Como a nota é calculada</summary>
+          <p><b>% das vendas</b>: participação do nicho entre os 20 mais vendidos da categoria acima, com peso maior para as primeiras posições (ranking de vendas oficial do ML). <b>% da procura</b>: participação nas 50 buscas em alta, também pesada pela posição. <b>% dos anúncios</b>: fatia do total de anúncios ativos. <b>Oportunidade</b>: procura e vendas divididas pela fatia de anúncios; acima de 1× significa mais demanda do que oferta. <b>Concorrência</b>: mediana de vendedores nos 3 produtos de catálogo mais vendidos do nicho.</p>
+          <p>Nota = 50% demanda (vendas e procura) + 20% oportunidade + 20% concorrência baixa + 10% preço (abaixo de R$ 30 a tarifa fixa pesa mais). Quente a partir de 65, Morno de 40 a 64, Frio abaixo de 40. É um indicador para priorizar a pesquisa, não um número de vendas: o ML não divulga vendas por categoria.</p>
+        </details>
+      </div></div>`;
+    out.querySelectorAll("[data-open]").forEach(el=>el.onclick=ev=>{ev.stopPropagation(); const id=el.dataset.open; +el.dataset.kids>0?openLevel(id):openLeaf(id,rows.find(x=>x.category_id===id))});
+    bindCommon(out);
+    if(cat!=="ROOT") openNiche(cat);
+  }catch(e){ if(cat==="ROOT") catsLoaded=false; fail(out,e,()=>openLevel(cat,fresh)); }
+}
+function delta(x){ if(!x.prev||x.prev.score==null||x.score==null) return ""; const d=x.score-x.prev.score; return d>0?`<span class="mv up">▲${d}</span>`:d<0?`<span class="mv down">▼${-d}</span>`:""; }
+function openLeaf(id){ openNiche(id); $("#nicheOut").scrollIntoView({behavior:"smooth",block:"start"}); }
+$("#lvRef").onclick=()=>openLevel(curLevel,true);
+async function openNiche(cat){
+  if(!okId(cat)) return; const out=$("#nicheOut");
+  loading(out,"Lendo os 20 mais vendidos deste nicho e a concorrência de cada um (20 a 40 s)…");
+  try{
+    const r=await api("niche","cat="+cat);
+    if(r.category?.path) setCrumbs(r.category.path);
+    const top=r.top||[]; const s=r.summary||{};
+    out.innerHTML=`
+      <div class="card"><div class="row" style="justify-content:space-between"><div><span class="lbl">Produtos do nicho</span><h1>${esc(r.category.name)}</h1></div><button class="btn" id="nRef">Atualizar agora</button></div>
+      <div class="tiles">
+        <div><span class="lbl">Preço mediano</span><strong>${brl(s.median_price)}</strong><small>do top 20</small></div>
+        <div><span class="lbl">Vendedores por produto</span><strong>${int(s.median_offers)}</strong><small>mediana do top 20</small></div>
+        <div><span class="lbl">Usam Full</span><strong>${pct(s.median_full_pct)}</strong><small>mediana das ofertas</small></div>
+        <div><span class="lbl">Dias monitorados</span><strong>${int(s.tracked_days)}</strong><small>histórico deste nicho</small></div>
+      </div>
+      ${(r.trends||[]).length?`<div class="row"><span class="lbl">Buscas em alta</span>${r.trends.map(t=>`<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join("")}</div>`:""}
+      </div>
+      <div class="card"><h2>Os 20 mais vendidos</h2>
+      ${r.highlights_status!==200?`<div class="state"><b>O Mercado Livre não publica ranking para esta categoria</b>Desça para uma subcategoria acima.</div>`:`
+      <div class="scroll"><table><thead><tr><th class="n">#</th><th>Produto</th><th class="n">Vendedores</th><th class="n">Preço mediano</th><th class="n">Faixa</th><th class="n">Full</th></tr></thead><tbody>
+      ${top.map(p=>`<tr${p.type==="PRODUCT"?` class="click" data-pid="${esc(p.id)}"`:""}><td class="n">${p.position} ${mv(p)}</td>
+        <td class="name">${p.type==="PRODUCT"?`<button class="lnk" data-pid="${esc(p.id)}">${esc(p.name||p.id)}</button>`:`<a class="lnk" href="${esc(p.permalink)}" target="_blank" rel="noopener">${esc(p.name||"Anúncio "+p.id)} ↗</a>`}
+        <br><span class="pill">${p.type==="PRODUCT"?"catálogo":"anúncio próprio"}</span> ${p.type==="PRODUCT"?compPill(p.offers):""}${p.days_in_top>1?` <span class="pill full">${p.days_in_top} dias no top</span>`:""}</td>
+        <td class="n">${int(p.offers)}</td><td class="n">${brl(p.median_price??p.min_price)}</td><td class="n">${p.min_price!=null&&p.max_price!=null?brl(p.min_price)+" – "+brl(p.max_price):"—"}</td><td class="n">${pct(p.full_pct)}</td></tr>`).join("")}
+      </tbody></table></div>`}
+      <p class="note">Itens marcados “anúncio próprio” não são do catálogo; a API não mostra os dados deles para outras contas, então abra no Mercado Livre. Concorrência: até 5 vendedores = pouca, até 25 = média, acima = muito disputado.</p></div>`;
+    $("#nRef").onclick=()=>openNicheFresh(cat);
+    bindCommon(out);
+  }catch(e){fail(out,e,()=>openNiche(cat))}
+}
+async function openNicheFresh(cat){ await invalidateCache(); openNiche(cat); }
+function mv(p){ if(p.prev_rank==null) return p.days_in_top?"":`<span class="mv new" title="novo hoje">•</span>`; const d=p.prev_rank-p.position; return d>0?`<span class="mv up">▲${d}</span>`:d<0?`<span class="mv down">▼${-d}</span>`:`<span class="mv">=</span>`; }
+
+/* ---------- produto ---------- */
+let curProd=null;
+async function openProduct(id){
+  if(!okId(id)) return; show("produto"); const out=$("#prodOut");
+  loading(out,"Lendo todos os vendedores e a reputação de cada um…");
+  try{
+    const r=await api("product","id="+id); curProd=r; renderProduct(r);
+  }catch(e){fail(out,e,()=>openProduct(id))}
+}
+function renderProduct(r){
+  const s=r.stats||{}; const out=$("#prodOut");
+  const sellers=new Map(); (r.offers||[]).forEach(o=>{ if(!sellers.has(o.seller_id)) sellers.set(o.seller_id,o)});
+  const big=[...sellers.values()].filter(o=>o.seller?.sales_total!=null).sort((a,b)=>b.seller.sales_total-a.seller.sales_total).slice(0,3);
+  out.innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="card"><span class="lbl">Produto de catálogo · ${esc(r.id)}</span><h1>${esc(r.name)}</h1>
+      <div class="row"><a class="btn" href="${esc(r.permalink)}" target="_blank" rel="noopener">Abrir no Mercado Livre ↗</a>
+      ${(r.attributes||[]).slice(0,6).map(a=>`<span class="pill">${esc(a.name)}: ${esc(a.value)}</span>`).join(" ")}</div></div>
+    <div class="tiles">
+      <div><span class="lbl">Vendedores</span><strong>${int(s.offers)}</strong><small>${compPill(s.offers)}</small></div>
+      <div><span class="lbl">Menor preço</span><strong>${brl(s.min_price)}</strong><small>mediano ${brl(s.median_price)}</small></div>
+      <div><span class="lbl">Usam Full</span><strong>${pct(s.full_pct)}</strong><small>das ofertas lidas</small></div>
+      <div><span class="lbl">Anúncio Premium</span><strong>${pct(s.premium_pct)}</strong><small>das ofertas lidas</small></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Quem vende</h2>
+        ${big.length?`<p class="note">Maiores vendedores aqui: ${big.map(o=>`<b>${esc(o.seller.nickname)}</b> (${int(o.seller.sales_total)} vendas na história)`).join(", ")}.</p>`:""}
+        <div class="scroll"><table><thead><tr><th class="n">#</th><th>Vendedor</th><th class="n">Preço</th><th>Anúncio</th><th class="n">Vendas totais</th></tr></thead><tbody>
+        ${(r.offers||[]).map(o=>`<tr><td class="n">${o.rank}</td><td>${o.seller?esc(o.seller.nickname):"Vendedor "+esc(o.seller_id)}<br>
+          <span class="rep" title="${esc(o.seller?.level||"sem reputação")}"><i style="width:${repW(o.seller?.level)}%;background:${repColor(o.seller?.level)}"></i></span>
+          ${o.seller?.power?`<span class="pill">${esc(o.seller.power)}</span>`:""} ${o.seller?.state?`<span class="pill">${esc(String(o.seller.state).replace("BR-",""))}</span>`:""}</td>
+          <td class="n">${brl(o.price)}${o.original_price?`<br><s style="color:var(--muted)">${brl(o.original_price)}</s>`:""}</td>
+          <td>${esc(o.listing_type||"")}${o.full?` <span class="pill full">Full</span>`:""}${o.free_shipping?` <span class="pill">frete grátis</span>`:""}${o.official_store?` <span class="pill warn">loja oficial</span>`:""}${okId(o.item_id)?`<br><span class="pill full" data-intel="${esc(o.item_id)}" hidden></span>`:""}</td>
+          <td class="n">${int(o.seller?.sales_total)}</td></tr>`).join("")}
+        </tbody></table></div>
+        <p class="note">“Vendas totais” é o histórico da conta do vendedor inteira (todas as vendas, não só deste produto). Reputação lida para os 25 primeiros vendedores.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h2>Simular minha margem</h2>
+          <div class="fields">
+            <div class="f"><label for="sCusto">Custo do produto</label><div class="in"><span>R$</span><input id="sCusto" inputmode="decimal" placeholder="ex.: 15,00"></div></div>
+            <div class="f"><label for="sPreco">Meu preço</label><div class="in"><span>R$</span><input id="sPreco" inputmode="decimal" value="${s.median_price?String(s.median_price.toFixed(2)).replace(".",","):""}"></div></div>
+            <div class="f"><label for="sImp">Imposto</label><div class="in"><input id="sImp" inputmode="decimal" value="6" style="padding-left:9px"><span>%</span></div></div>
+            <div class="f"><label for="sFrete">Frete / custo por unidade</label><div class="in"><span>R$</span><input id="sFrete" inputmode="decimal" value="${(s.median_price||0)>=79?"22,00":"6,50"}"></div></div>
+          </div>
+          <div class="row"><button class="btn pri" id="sCalc">Calcular com a tarifa real</button><span class="note" id="sNote"></span></div>
+          <div id="sOut"></div>
+        </div>
+        <div class="card"><h2>Histórico de preço</h2>${histChart(r.history)}</div>
+      </div>
+    </div>
+  </div>`;
+  $("#sCalc").onclick=simulate;
+  fillIntel(r);
+}
+async function fillIntel(r){
+  const ids=[...new Set((r.offers||[]).map(o=>o.item_id).filter(okId))].slice(0,100); if(!ids.length) return;
+  try{
+    const x=await api("intel","ids="+ids.join(","),{stale:600000}); const it=x.items||{}; let n=0;
+    document.querySelectorAll("#prodOut [data-intel]").forEach(el=>{ const e=it[el.dataset.intel]; if(!e) return; const parts=[]; if(e.sold_label) parts.push(e.sold_label); if(e.est_month!=null) parts.push("~"+int(e.est_month)+"/mês"); if(!parts.length) return; el.textContent=parts.join(" · "); el.title="Lido pela extensão do Chrome"; el.hidden=false; n++; });
+    if(n){ const note=document.createElement("p"); note.className="note"; note.textContent=`Vendidos e ritmo por mês de ${n} anúncio(s) vêm da extensão do Chrome (leituras das páginas do ML).`; document.querySelector("#prodOut table")?.closest(".card")?.appendChild(note); }
+  }catch(_){}
+}
+const num=v=>{const n=parseFloat(String(v||"").trim().replace(/\./g,"").replace(",","."));return isFinite(n)?n:0};
+async function simulate(){
+  const r=curProd; if(!r) return; const preco=num($("#sPreco").value), custo=num($("#sCusto").value), imp=num($("#sImp").value), frete=num($("#sFrete").value);
+  const out=$("#sOut"); if(!preco){out.innerHTML=`<p class="note">Informe o preço.</p>`;return}
+  const cat=(r.offers||[])[0]?.category_id; if(!okId(cat)){out.innerHTML=`<p class="note">Categoria não identificada.</p>`;return}
+  $("#sCalc").disabled=true; $("#sNote").innerHTML=`<span class="spin"></span>consultando tarifa`;
+  try{
+    const fees=await api("fees",`price=${preco}&cat=${cat}`,{stale:86400000});
+    out.innerHTML=(fees||[]).sort((a,b)=>a.percent-b.percent).map(f=>{
+      const lucro=preco-f.total-frete-preco*imp/100-custo, marg=preco?lucro/preco*100:0;
+      return `<div style="margin-top:8px"><span class="lbl">${esc(f.type)} · tarifa ${pct(f.percent)}</span><ul class="calc">
+        <li><span>Tarifa de venda</span><span class="v">−${brl(f.total)}</span></li>
+        <li><span>Frete / custo por unidade</span><span class="v">−${brl(frete)}</span></li>
+        <li><span>Imposto (${pct(imp)})</span><span class="v">−${brl(preco*imp/100)}</span></li>
+        <li><span>Custo do produto</span><span class="v">−${brl(custo)}</span></li>
+        <li class="tot"><span>Sobra por unidade</span><span class="v" style="color:${lucro<0?"var(--bad)":"var(--good)"}">${brl(lucro)} · ${pct(marg)}</span></li></ul></div>`}).join("");
+    $("#sNote").textContent="";
+  }catch(e){out.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`;$("#sNote").textContent=""}
+  finally{$("#sCalc").disabled=false}
+}
+function histChart(h){
+  if(!h||h.length<2) return `<p class="note">O Oportuniza grava o preço toda vez que você abre este produto. Com dois dias ou mais, aparece a linha do menor preço e do preço mediano aqui.</p>`+(h&&h[0]?`<p class="note">Hoje: menor ${brl(h[0].min)}, mediano ${brl(h[0].median)}, ${h[0].sellers} vendedores.</p>`:"");
+  const W=320,H=120,P=24; const vals=h.flatMap(x=>[x.min,x.median]); const lo=Math.min(...vals),hi=Math.max(...vals); const sy=v=>H-P-(hi===lo?0.5:(v-lo)/(hi-lo))*(H-2*P); const sx=i=>P+i*(W-2*P)/(h.length-1);
+  const line=k=>h.map((x,i)=>`${i?"L":"M"}${sx(i).toFixed(1)},${sy(x[k]).toFixed(1)}`).join("");
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Histórico de preço">
+    <line x1="${P}" x2="${W-P}" y1="${sy(lo)}" y2="${sy(lo)}" stroke="var(--line)"/><line x1="${P}" x2="${W-P}" y1="${sy(hi)}" y2="${sy(hi)}" stroke="var(--line)"/>
+    <path d="${line("median")}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <path d="${line("min")}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="${sx(h.length-1)}" cy="${sy(h[h.length-1].min)}" r="3.5" fill="var(--accent)"/>
+    <text x="${P}" y="${sy(hi)-6}" font-size="10" fill="var(--muted)" font-family="var(--f-num)">${brl(hi)}</text>
+    <text x="${P}" y="${sy(lo)+14}" font-size="10" fill="var(--muted)" font-family="var(--f-num)">${brl(lo)}</text></svg>
+    <p class="note"><span style="color:var(--accent)">━</span> menor preço · <span>╌</span> mediano · ${h.length} dias</p>`;
+}
+
+/* ---------- financeiro ---------- */
+let finLoaded=false, finDays=30, finData=null;
+const n2=v=>{const x=num(v);return Math.round(x*100)/100};
+document.querySelectorAll("#finPer button").forEach(b=>b.onclick=()=>{finDays=+b.dataset.d;document.querySelectorAll("#finPer button").forEach(x=>x.setAttribute("aria-pressed",x===b));loadFin(true)});
+async function loadFin(fresh){
+  finLoaded=true; const out=$("#finOut"); loading(out,"Lendo seus anúncios, tarifas reais e pedidos do período…");
+  try{ finData=await api("finance","days="+finDays,{fresh:!!fresh,stale:600000}); renderFin(finData); }
+  catch(e){ finLoaded=false; fail(out,e,()=>loadFin(true)); }
+}
+const ST={prejuizo:["bad","Prejuízo"],isca:["warn","Isca"],ok:["full","Lucro"],sem_custo:["","Sem custo"]};
+function renderFin(r){
+  const t=r.totals||{}, S=r.settings||{}, P=r.projected||[];
+  const cnt=k=>P.filter(x=>x.status===k).length;
+  const comp=[["Custo dos produtos",t.cogs,"var(--muted)"],["Tarifas ML",t.fees,"var(--ink)"],["Frete",t.shipping,"#6A7FD8"],["Imposto",t.tax,"#9A6BC8"],["Fornecedor (por pedido)",t.supplier,"var(--amber)"],["Margem de contribuição",Math.max(t.margin||0,0),"var(--accent)"]].filter(x=>x[1]>0);
+  const ct=comp.reduce((a,x)=>a+x[1],0)||1;
+  $("#finOut").innerHTML=`
+  <div class="card"><h2>Resultado dos últimos ${r.days} dias</h2>
+    ${t.orders?`<div class="tiles">
+      <div><span class="lbl">Faturamento</span><strong>${brl(t.revenue)}</strong><small>${int(t.orders)} pedidos · ${int(t.units)} unidades</small></div>
+      <div><span class="lbl">Margem de contribuição</span><strong style="color:${t.margin<0?"var(--bad)":"var(--good)"}">${brl(t.margin)}</strong><small>${pct(t.margin_pct)} do faturamento</small></div>
+      <div><span class="lbl">Ticket médio</span><strong>${brl(t.ticket)}</strong><small>${int(t.cancelled)} cancelados (fora da conta)</small></div>
+      <div><span class="lbl">Tarifas + frete</span><strong>${brl((t.fees||0)+(t.shipping||0))}</strong><small>${pct(t.revenue?((t.fees+t.shipping)/t.revenue*100):null)} do faturamento</small></div></div>
+      <div class="bar2" aria-hidden="true">${comp.map(x=>`<i style="width:${x[1]/ct*100}%;background:${x[2]}"></i>`).join("")}</div>
+      <div class="legend2">${comp.map(x=>`<span><b style="background:${x[2]}"></b>${x[0]} ${brl(x[1])}</span>`).join("")}</div>
+      ${t.missing_cost_units?`<p class="note">⚠ ${int(t.missing_cost_units)} unidade(s) vendida(s) sem custo cadastrado entraram com custo zero. Preencha o custo abaixo para a margem ficar certa.</p>`:""}
+      ${dailyChart(r.daily)}`
+    :`<div class="state"><b>Nenhuma venda nos últimos ${r.days} dias</b>Assim que um pedido entrar, ele aparece aqui com a tarifa e o frete que o Mercado Livre cobrou de verdade.</div>`}
+  </div>
+  ${(r.by_item||[]).length?`<div class="card"><h2>Resultado por anúncio</h2><div class="scroll"><table><thead><tr><th>Anúncio</th><th class="n">Unid.</th><th class="n">Faturamento</th><th class="n">Tarifas</th><th class="n">Frete</th><th class="n">Custo</th><th class="n">Margem</th></tr></thead><tbody>
+    ${r.by_item.map(b=>`<tr><td class="name">${esc(b.title)}</td><td class="n">${int(b.units)}</td><td class="n">${brl(b.revenue)}</td><td class="n">${brl(b.fees)}</td><td class="n">${brl(b.shipping)}</td><td class="n">${brl(b.cogs)}</td><td class="n" style="color:${b.margin<0?"var(--bad)":"var(--good)"}">${brl(b.margin)}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+  ${fixedCard(r)}
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><h2>Margem de cada anúncio (antes de vender)</h2>
+      <div class="row">${cnt("prejuizo")?`<span class="pill bad">${cnt("prejuizo")} em prejuízo</span>`:""}${cnt("isca")?`<span class="pill warn">${cnt("isca")} isca</span>`:""}${cnt("ok")?`<span class="pill full">${cnt("ok")} com lucro</span>`:""}${cnt("sem_custo")?`<span class="pill">${cnt("sem_custo")} sem custo</span>`:""}</div></div>
+    <p class="note">O custo vem sozinho do fornecedor quando o anúncio tem o SKU dele (veja “De onde vêm os custos”, abaixo). Para usar outro valor em um anúncio, digite no campo e toque em Salvar custos; apagar o campo volta para o valor do fornecedor. A tarifa é a real do ML. O envio é o valor que o ML cobra da sua conta para aquele anúncio (pelo peso e pela faixa de preço); só digite na coluna Envio se quiser forçar outro valor.</p>
+    <div class="scroll"><table class="fin"><thead><tr><th>Anúncio</th><th class="n">Preço</th><th class="n">Tarifa</th><th class="n">Envio</th><th class="n">Custo</th><th class="n">Sobra</th><th>Situação</th></tr></thead><tbody>
+    ${P.map(x=>`<tr class="${x.status==="prejuizo"?"rowbad":""}"><td class="name"><a class="lnk" href="${esc(x.permalink)}" target="_blank" rel="noopener">${esc(x.title)}</a><br><span class="pill">${esc(x.listing_type)}</span>${x.status_ml!=="active"?` <span class="pill">${esc({paused:"pausado",closed:"finalizado",under_review:"em revisão",inactive:"inativo"}[x.status_ml]||x.status_ml)}</span>`:""}</td>
+      <td class="n" data-l="Preço">${brl(x.price)}</td><td class="n" data-l="Tarifa">${brl(x.fee)} <small class="muted">${pct(x.fee_pct)}</small></td>
+      <td class="n" data-l="Envio"><input class="cin" id="ship_${esc(x.id)}" data-id="${esc(x.id)}" data-k="ship" inputmode="decimal" value="${x.ship_is_estimate?"":String(x.ship).replace(".",",")}" placeholder="${String(x.ship).replace(".",",")}" aria-label="Envio de ${esc(x.title)}"></td>
+      <td class="n" data-l="Custo"><div class="cwrap"><input class="cin" id="cost_${esc(x.id)}" data-id="${esc(x.id)}" data-k="cost" inputmode="decimal" value="${x.manual_cost==null?"":String(x.manual_cost).replace(".",",")}" placeholder="${x.supplier_cost!=null?String(x.supplier_cost).replace(".",","):"R$"}" aria-label="Custo de ${esc(x.title)}">${srcTag(x)}</div></td>
+      <td class="n" data-l="Sobra">${x.margin==null?"—":`<b style="color:${x.margin<0?"var(--bad)":"var(--good)"}">${brl(x.margin)}</b> <small class="muted">${pct(x.margin_pct)}</small>`}</td>
+      <td data-l="Situação"><span class="pill ${ST[x.status][0]}">${ST[x.status][1]}</span></td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="row"><button class="btn pri" id="saveCosts">Salvar custos</button><span class="note" id="costMsg" role="status"></span></div>
+  </div>
+  <div class="card" id="srcCard"><h2>De onde vêm os custos</h2>
+    <p class="note">Quando o mesmo anúncio tem custo em mais de um lugar, vale nesta ordem: o valor que você digitou, depois a importação mais recente.</p>
+    <div id="srcList"><span class="spin"></span>Carregando fornecedores…</div>
+    <div class="srcgrid">
+      <section class="srcbox"><h3>GoBoox, automático</h3>
+        <p>Um botão nos favoritos do Chrome lê o catálogo da sua conta GoBoox e atualiza todos os custos. Os anúncios casam sozinhos pelo SKU (GBX-…).</p>
+        <ol class="steps"><li>Toque em <b>Copiar botão</b>.</li><li>No Chrome do computador, crie um favorito (Ctrl+D), toque em <b>Editar</b> e cole no campo <b>URL</b>. Nome: Oportuniza GoBoox.</li><li>Com o catálogo da GoBoox aberto e logado, clique no favorito. Uma caixa no canto confirma quantos custos foram enviados.</li></ol>
+        <div class="row"><button class="btn" id="bmCopy">Copiar botão</button><span class="note" id="bmMsg" role="status"></span></div>
+        <textarea id="bmText" class="bmtext" readonly rows="2" aria-label="Código do botão de favoritos"></textarea>
+        <p class="note">Também pode pedir para o Claude: “atualiza os custos da GoBoox no Oportuniza”.</p>
+      </section>
+      <section class="srcbox"><h3>Planilha ou outro fornecedor</h3>
+        <p>Envie um arquivo Excel ou CSV, ou cole as linhas copiadas do Excel. Precisa de uma coluna de custo e pelo menos uma destas para casar: anúncio do ML (MLB…), SKU, código de barras ou nome do produto.</p>
+        <div class="f"><label for="impSup">Nome do fornecedor</label><div class="in"><input id="impSup" value="Planilha" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+        <div class="row"><label class="btn" for="impFile">Escolher arquivo</label><input type="file" id="impFile" accept=".csv,.xlsx,.xls,.txt" hidden><button class="btn" id="impTpl">Baixar modelo com meus anúncios</button></div>
+        <textarea id="impPaste" rows="3" class="bmtext" placeholder="Ou cole aqui as linhas da planilha (com o cabeçalho)" aria-label="Colar linhas da planilha"></textarea>
+        <div class="row"><button class="btn" id="impRead">Ler linhas coladas</button><span class="note" id="impMsg" role="status"></span></div>
+      </section>
+    </div>
+    <div id="impPrev"></div>
+  </div>
+  <div class="card"><h2>Configurações</h2>
+    <div class="fields4">
+      <div class="f"><label for="sTax">Imposto sobre a venda</label><div class="in"><input id="sTax" inputmode="decimal" value="${String(S.tax_pct??0).replace(".",",")}" style="padding-left:9px"><span>%</span></div><small class="muted">Pessoa física: 0%. MEI ou Simples: ajuste aqui.</small></div>
+      <div class="f"><label for="sSup">Taxa do fornecedor por pedido</label><div class="in"><span>R$</span><input id="sSup" inputmode="decimal" value="${String(S.supplier_fee_order??0).replace(".",",")}"></div><small class="muted">Se a GoBoox cobrar algo fixo por envio.</small></div>
+      <div class="f"><label for="sB79">Envio reserva abaixo de R$ 79</label><div class="in"><span>R$</span><input id="sB79" inputmode="decimal" value="${String(S.ship_below_79??6.5).replace(".",",")}"></div><small class="muted">Só usado se o ML não responder o valor real.</small></div>
+      <div class="f"><label for="sA79">Envio reserva a partir de R$ 79</label><div class="in"><span>R$</span><input id="sA79" inputmode="decimal" value="${String(S.ship_free_79??22).replace(".",",")}"></div><small class="muted">Só usado se o ML não responder o valor real.</small></div>
+      <div class="f"><label for="sTgt">Margem desejada</label><div class="in"><input id="sTgt" inputmode="decimal" value="${String(S.target_margin_pct??20).replace(".",",")}" style="padding-left:9px"><span>%</span></div><small class="muted">Base do preço ideal na aba Saúde.</small></div>
+    </div>
+    <div class="row"><button class="btn" id="saveSet">Salvar configurações</button><span class="note" id="setMsg" role="status"></span></div>
+  </div>`;
+  $("#saveCosts").onclick=saveCosts; $("#saveSet").onclick=saveSettings; initFixed(r);
+  initSources();
+}
+function dailyChart(d){
+  if(!d||d.length<2) return "";
+  const W=600,H=140,P=28; const mx=Math.max(...d.map(x=>x.revenue),1); const bw=(W-2*P)/d.length;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Faturamento e margem por dia" style="height:150px">
+    <line x1="${P}" x2="${W-P}" y1="${H-P}" y2="${H-P}" stroke="var(--line)"/>
+    ${d.map((x,i)=>{const h=(x.revenue/mx)*(H-2*P), hm=Math.max(0,x.margin)/mx*(H-2*P); const X=P+i*bw+bw*0.15, w=bw*0.7;
+      return `<rect x="${X}" y="${H-P-h}" width="${w}" height="${h}" fill="var(--sunk)" stroke="var(--line)"/><rect x="${X}" y="${H-P-hm}" width="${w}" height="${hm}" fill="var(--accent)"/>`}).join("")}
+    <text x="${P}" y="${P-10}" font-size="11" fill="var(--muted)" font-family="var(--f-num)">${brl(mx)}</text>
+    <text x="${P}" y="${H-8}" font-size="11" fill="var(--muted)" font-family="var(--f-num)">${new Date(d[0].day+"T12:00").toLocaleDateString("pt-BR")}</text>
+    <text x="${W-P}" y="${H-8}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--f-num)">${new Date(d[d.length-1].day+"T12:00").toLocaleDateString("pt-BR")}</text></svg>
+    <p class="note"><span style="color:var(--accent)">■</span> margem · <span style="color:var(--muted)">□</span> faturamento por dia</p>`;
+}
+async function saveCosts(){
+  const map={};
+  document.querySelectorAll("#finOut .cin").forEach(i=>{ const id=i.dataset.id; if(!/^MLB\d+$/.test(id)) return; (map[id]??={item_id:id}); const v=i.value.trim(); map[id][i.dataset.k]=v===""?"":String(n2(v)); });
+  const orig=new Map((finData?.projected||[]).map(x=>[x.id,x]));
+  const changed=Object.values(map).filter(m=>{const o=orig.get(m.item_id); const oc=o?.manual_cost==null?"":String(o.manual_cost); const os=o?.ship_is_estimate?"":String(o?.ship); return (m.cost??"")!==oc||(m.ship??"")!==os;});
+  if(!changed.length){ $("#costMsg").textContent="Nada mudou."; return; }
+  const payload=JSON.stringify(changed.map(m=>({item_id:m.item_id,cost:m.cost??"",ship:m.ship??"",source:"manual"})));
+  $("#saveCosts").disabled=true; $("#costMsg").innerHTML=`<span class="spin"></span>Salvando ${changed.length} anúncio(s)…`;
+  try{ await rpc("set_costs",JSON.parse(payload)); $("#costMsg").textContent="Salvo. Recalculando…"; await loadFin(true); }
+  catch(e){ $("#costMsg").textContent=errMsg(e); $("#saveCosts").disabled=false; }
+}
+async function saveSettings(){
+  const p={tax_pct:n2($("#sTax").value),supplier_fee_order:n2($("#sSup").value),ship_below_79:n2($("#sB79").value),ship_free_79:n2($("#sA79").value),target_margin_pct:n2($("#sTgt").value)};
+  $("#saveSet").disabled=true; $("#setMsg").innerHTML=`<span class="spin"></span>Salvando…`;
+  try{ await rpc("set_settings",p); await loadFin(true); }
+  catch(e){ $("#setMsg").textContent=errMsg(e); $("#saveSet").disabled=false; }
+}
+
+/* ---------- custos fixos e lucro líquido ---------- */
+function fixedCard(r){
+  const F=r.fixed||{}, t=r.totals||{};
+  const has=(F.monthly||0)>0;
+  return `<div class="card" id="fxCard"><h2>Custos fixos e lucro líquido</h2>
+    <p class="note">Gastos que existem mesmo sem vender: internet, ferramentas, contador, MEI, celular. O Oportuniza desconta da margem de contribuição e mostra quantas vendas por mês pagam esses custos.</p>
+    ${has?`<div class="tiles">
+      <div><span class="lbl">Custos fixos</span><strong>${brl(F.monthly)}</strong><small>por mês · ${brl(F.period)} em ${r.days} dias</small></div>
+      <div><span class="lbl">Lucro líquido</span><strong style="color:${F.net<0?"var(--bad)":"var(--good)"}">${brl(F.net)}</strong><small>margem ${brl(t.margin||0)} − fixos ${brl(F.period)}</small></div>
+      <div><span class="lbl">Ponto de equilíbrio</span><strong>${F.break_even_units==null?"—":int(F.break_even_units)+" vendas"}</strong><small>${F.break_even_units==null?"cadastre custos para calcular":"por mês · "+(F.break_even_per_day!=null?String(F.break_even_per_day).replace(".",",")+" por dia":"")}</small></div>
+      <div><span class="lbl">Sobra média por venda</span><strong>${brl(F.unit_margin)}</strong><small>${F.unit_basis==="vendas"?"das vendas do período":"média dos seus anúncios"}</small></div>
+    </div>`:""}
+    <div id="fxRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="row"><button class="btn sm" id="fxAdd">+ Adicionar custo</button><button class="btn pri" id="fxSave">Salvar custos fixos</button><span class="note" id="fxMsg" role="status"></span></div>
+  </div>`;
+}
+function fxRow(n,a){ const d=document.createElement("div"); d.className="fxrow"; d.innerHTML=`<input class="nm" placeholder="Ex.: internet" value="${esc(n||"")}" aria-label="Nome do custo"><div class="in"><span>R$</span><input class="am" inputmode="decimal" placeholder="0,00" value="${a==null?"":String(a).replace(".",",")}" aria-label="Valor por mês"></div><button class="btn sm" aria-label="Remover">✕</button>`; d.querySelector("button").onclick=()=>d.remove(); return d; }
+function initFixed(r){
+  const box=$("#fxRows"); const items=r.fixed?.items||[];
+  (items.length?items:[{name:"",amount:null}]).forEach(x=>box.appendChild(fxRow(x.name,x.amount)));
+  $("#fxAdd").onclick=()=>{ const d=fxRow("",null); box.appendChild(d); d.querySelector(".nm").focus(); };
+  $("#fxSave").onclick=async()=>{
+    const list=[...box.querySelectorAll(".fxrow")].map(d=>({name:d.querySelector(".nm").value.trim(),amount:d.querySelector(".am").value.trim()})).filter(x=>x.name&&x.amount!=="").map(x=>({name:x.name.slice(0,80),amount:n2(x.amount)}));
+    $("#fxSave").disabled=true; $("#fxMsg").innerHTML=`<span class="spin"></span>Salvando…`;
+    try{ await rpc("set_fixed_costs",list); $("#fxMsg").textContent="Salvo. Recalculando…"; await loadFin(true); }
+    catch(e){ $("#fxMsg").textContent=errMsg(e); $("#fxSave").disabled=false; }
+  };
+}
+
+/* ---------- fontes de custo ---------- */
+const BOOKMARKLET_TPL="javascript:(async()=%3E%7Bconst%20o=document.createElement(%22div%22);o.style.cssText=%22position:fixed;z-index:2147483647;right:16px;bottom:16px;max-width:320px;background:%230F1F1A;color:%23fff;font:14px/1.4%20system-ui,sans-serif;padding:14px%2016px;border-radius:12px;box-shadow:0%208px%2030px%20rgba(0,0,0,.35)%22;const%20e=e=%3E%7Bo.textContent=e%7D;if(document.body.appendChild(o),!/goboox%5C.com%5C.br%24/.test(location.hostname))return%20e(%22Abra%20o%20cat%5Cxe1logo%20da%20GoBoox%20(app.goboox.com.br)%20e%20toque%20no%20bot%5Cxe3o%20de%20novo.%22),void%20setTimeout((()=%3Eo.remove()),6e3);let%20t=null;try%7Bt=JSON.parse(localStorage.getItem(%22auth-storage%22)).state.token%7Dcatch(o)%7B%7Dif(!t)return%20e(%22Entre%20na%20sua%20conta%20da%20GoBoox%20primeiro.%22),void%20setTimeout((()=%3Eo.remove()),6e3);const%20a=new%20Map;let%20s=1,r=1,n=0;try%7Bfor(;n++%3C300;)%7Be(%22Radar:%20lendo%20cat%5Cxe1logo%20GoBoox%5Cu2026%20%22+a.size+%22%20produtos%22);const%20o=await%20fetch(%60https://api.goboox.com.br/v3/catalog/products?page=%24%7Bs%7D&step=%24%7Br%7D&sort=sales_desc%60,%7Bheaders:%7Bauthorization:%22Bearer%20%22+t%7D%7D);if(!o.ok)throw%20new%20Error(%22GoBoox%20respondeu%20%22+o.status);const%20n=await%20o.json(),i=n.pagination%7C%7C%7B%7D;for(const%20o%20of%20n.products%7C%7C%5B%5D)a.set(o.id,%7Bsku:o.id,title:o.name,cost:o.price,stock:o.stock%7D);if(i.has_next_step)r=i.next_step;else%7Bif(!i.has_next_page)break;s=i.next_page,r=1%7Dawait%20new%20Promise((o=%3EsetTimeout(o,200)))%7De(%22Radar:%20enviando%20%22+a.size+%22%20custos%5Cu2026%22);const%20o=await%20fetch(%22https://dbikbgbgplosqwnovhvr.supabase.co/functions/v1/sup%22,%7Bmethod:%22POST%22,headers:%7B%22content-type%22:%22text/plain%22%7D,body:JSON.stringify(%7Bk:%22__SUPKEY__%22,supplier:%22GoBoox%22,items:%5B...a.values()%5D%7D)%7D),i=await%20o.json();if(!o.ok%7C%7C!i.ok)throw%20new%20Error(i.error%7C%7C%22erro%20%22+o.status);e(%22%5Cu2713%20Radar%20atualizado:%20%22+i.saved+%22%20custos%20da%20GoBoox.%20Abra%20o%20Financeiro%20e%20toque%20em%20Atualizar.%22)%7Dcatch(o)%7Be(%22N%5Cxe3o%20deu%20certo:%20%22+o.message)%7DsetTimeout((()=%3Eo.remove()),9e3)%7D)();";
+function srcTag(x){
+  if(x.manual_cost!=null) return `<span class="src man" title="Valor digitado por você">${esc(x.cost_source&&x.cost_source!=="manual"?x.cost_source:"digitado")}</span>`;
+  if(x.supplier_cost!=null) return `<span class="src sup" title="Custo do fornecedor ${esc(x.supplier)}">${esc(x.supplier)}</span>`;
+  return "";
+}
+let BOOKMARKLET="", KEYS=null;
+async function getKeys(){ if(!KEYS) KEYS=await rpc("keys"); return KEYS; }
+function initSources(){
+  $("#bmText").value="Carregando…";
+  getKeys().then(k=>{ BOOKMARKLET=BOOKMARKLET_TPL.replace("__SUPKEY__",k.sup_key); const t=$("#bmText"); if(t) t.value=BOOKMARKLET; }).catch(e=>{ const t=$("#bmText"); if(t) t.value=errMsg(e); });
+  $("#bmCopy").onclick=async()=>{ if(!BOOKMARKLET) return; try{ await navigator.clipboard.writeText(BOOKMARKLET); $("#bmMsg").textContent="Copiado. Agora cole no URL do favorito."; }catch(_){ $("#bmText").focus(); $("#bmText").select(); $("#bmMsg").textContent="Selecionei o código abaixo: copie com Ctrl+C."; } };
+  $("#impFile").onchange=e=>{ const f=e.target.files[0]; if(f) readFile(f); e.target.value=""; };
+  $("#impRead").onclick=()=>{ const t=$("#impPaste").value.trim(); if(!t){ $("#impMsg").textContent="Cole as linhas primeiro."; return; } buildPreview(parseText(t),"texto colado"); };
+  $("#impTpl").onclick=downloadTemplate;
+  loadSources();
+}
+async function loadSources(){
+  const el=$("#srcList");
+  try{
+    const list=await rpc("suppliers")||[];
+    el.innerHTML=list.length?`<div class="suplist">${list.map(s=>`<div class="sup"><div><b>${esc(s.supplier)}</b><br><small class="muted">${int(s.with_cost)} produtos com custo · atualizado ${new Date(s.updated_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</small></div><button class="btn sm" data-rm="${esc(s.supplier)}">Remover</button></div>`).join("")}</div>`
+      :`<p class="note">Nenhum fornecedor importado ainda.</p>`;
+    el.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{
+      if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="Toque de novo para remover"; b.classList.add("danger"); setTimeout(()=>{ if(b.isConnected){ b.dataset.ok=""; b.textContent="Remover"; b.classList.remove("danger"); } },4000); return; }
+      removeSupplier(b.dataset.rm,b);
+    });
+  }catch(e){ el.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`; }
+}
+async function removeSupplier(name,btn){
+  btn.disabled=true; btn.innerHTML=`<span class="spin"></span>Removendo`;
+  try{ await rpc("remove_supplier",name); await loadFin(true); }
+  catch(e){ btn.disabled=false; btn.textContent=errMsg(e); }
+}
+
+/* leitura de planilha */
+let XLSXready=null;
+function loadXLSX(){ if(window.XLSX) return Promise.resolve(); if(XLSXready) return XLSXready;
+  XLSXready=new Promise((ok,no)=>{ const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload=ok; s.onerror=()=>{XLSXready=null;no(new Error("Não consegui carregar o leitor de Excel. Salve como CSV e tente de novo."))}; document.head.appendChild(s); });
+  return XLSXready; }
+async function readFile(f){
+  $("#impMsg").innerHTML=`<span class="spin"></span>Lendo ${esc(f.name)}…`;
+  try{
+    let rows;
+    if(/\.(xlsx|xls)$/i.test(f.name)){ await loadXLSX(); const wb=XLSX.read(await f.arrayBuffer(),{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]]; rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""}); }
+    else { let t=await f.text(); if(t.includes(String.fromCharCode(0xFFFD))){ t=new TextDecoder("windows-1252").decode(await f.arrayBuffer()); } rows=parseText(t); }
+    buildPreview(rows,f.name);
+  }catch(e){ $("#impMsg").textContent=e.message||String(e); }
+}
+function parseText(t){
+  t=t.replace(/^﻿/,"").replace(/\r\n?/g,"\n");
+  const first=t.split("\n")[0]||""; const cnt=c=>first.split(c).length-1;
+  const d=cnt("\t")>0?"\t":cnt(";")>=cnt(",")?";":",";
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<t.length;i++){ const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"' && cell==="") q=true;
+    else if(c===d){ row.push(cell); cell=""; }
+    else if(c==="\n"){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else cell+=c; }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r=>r.some(x=>String(x).trim()!==""));
+}
+function money(v){
+  let s=String(v??"").trim(); if(!s) return null;
+  s=s.replace(/[^\d,.\-]/g,""); if(!s||s==="-") return null;
+  const lc=s.lastIndexOf(","), ld=s.lastIndexOf(".");
+  if(lc>=0&&ld>=0){ s=lc>ld?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,""); }
+  else if(lc>=0){ s=s.replace(/\./g,"").replace(",","."); }
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)){ s=s.replace(/\./g,""); }
+  const n=parseFloat(s); return isFinite(n)&&n>=0?Math.round(n*100)/100:null;
+}
+const fold=s=>String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const COLS={
+  mlb:/^(anuncio|anuncio ml|anuncio_ml|mlb|id ml|id do anuncio|item|item id|codigo ml|link)$/,
+  sku:/^(sku|codigo|cod|cod\.|ref|referencia|codigo do produto|id do produto|id produto|id)$/,
+  gtin:/^(ean|gtin|codigo de barras|cod barras|codigo_barras|barcode)$/,
+  cost:/^(custo|preco de custo|custo unitario|custo_unitario|preco custo|valor de custo|preco|valor|price|cost|preco atacado|atacado)$/,
+  title:/^(nome|produto|titulo|descricao|nome do produto|title|descricao do produto)$/
+};
+function detectCols(header){
+  const h=header.map(x=>fold(x).trim().replace(/\s+/g," ")); const m={};
+  for(const [k,re] of Object.entries(COLS)){ const i=h.findIndex((x,j)=>re.test(x)&&!Object.values(m).includes(j)); if(i>=0) m[k]=i; }
+  return m;
+}
+const STOP=new Set("de da do das dos com para por em e a o as os um uma kit cor led".split(" "));
+const toks=s=>new Set(fold(s).replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w)));
+function sim(a,b){ const A=toks(a),B=toks(b); if(!A.size||!B.size) return 0; let n=0; A.forEach(w=>{if(B.has(w))n++}); return 2*n/(A.size+B.size); }
+const normSku=s=>String(s??"").trim().toUpperCase().replace(/^GBX-/,"");
+const normMlb=s=>{ const m=/MLB-?(\d{6,})/i.exec(String(s??"")); return m?"MLB"+m[1]:null; };
+let IMP=null;
+function buildPreview(rows,origin){
+  const out=$("#impPrev");
+  if(!rows||rows.length<2){ $("#impMsg").textContent="Não encontrei linhas. Confira se tem cabeçalho e pelo menos uma linha de produto."; return; }
+  const header=rows[0].map(String); const m=detectCols(header);
+  if(m.cost==null){ $("#impMsg").textContent="Não achei a coluna de custo. Dê o nome Custo (ou Preço) para ela no cabeçalho."; return; }
+  if(m.mlb==null&&m.sku==null&&m.gtin==null&&m.title==null){ $("#impMsg").textContent="Não achei coluna para casar. Use Anúncio (MLB), SKU, Código de barras ou Nome."; return; }
+  const data=rows.slice(1).map((r,i)=>({line:i+2, mlb:m.mlb!=null?normMlb(r[m.mlb]):null, sku:m.sku!=null?String(r[m.sku]??"").trim():"", gtin:m.gtin!=null?String(r[m.gtin]??"").replace(/\D/g,""):"", title:m.title!=null?String(r[m.title]??"").trim():"", cost:money(r[m.cost])})).filter(x=>x.cost!=null);
+  const P=finData?.projected||[];
+  const matches=P.map(a=>{
+    let best=null;
+    for(const d of data){
+      let how=null, score=0;
+      if(d.mlb&&d.mlb===a.id){how="Anúncio";score=3;}
+      else if(d.sku&&a.sku&&normSku(d.sku)===normSku(a.sku)){how="SKU";score=2.5;}
+      else if(d.gtin&&a.gtin&&d.gtin===String(a.gtin)){how="Código de barras";score=2;}
+      else if(d.title){ const s=sim(d.title,a.title); if(s>=0.4){how="Nome "+Math.round(s*100)+"%";score=s;} }
+      if(how&&(!best||score>best.score)) best={d,how,score};
+    }
+    return best?{a,...best}:null;
+  }).filter(Boolean);
+  const used=new Set(matches.map(x=>x.d.line));
+  IMP={supplier:($("#impSup").value.trim()||"Planilha").slice(0,60), data, matches, unmatched:data.filter(d=>!used.has(d.line))};
+  $("#impMsg").textContent=`${data.length} linhas com custo em ${origin}.`;
+  out.innerHTML=`<div class="impbox"><div class="row" style="justify-content:space-between"><h3>Conferir antes de importar</h3><span class="note">Colunas: ${Object.entries(m).map(([k,i])=>`${({mlb:"anúncio",sku:"SKU",gtin:"código de barras",cost:"custo",title:"nome"})[k]} = “${esc(header[i])}”`).join(" · ")}</span></div>
+    ${matches.length?`<div class="scroll"><table class="imp"><thead><tr><th></th><th>Seu anúncio</th><th>Linha da planilha</th><th>Casou por</th><th class="n">Custo atual</th><th class="n">Novo custo</th></tr></thead><tbody>
+    ${matches.map((x,i)=>`<tr><td><input type="checkbox" id="imp_${i}" data-i="${i}" ${x.score>=0.55?"checked":""} aria-label="Importar para ${esc(x.a.title)}"></td><td class="name">${esc(x.a.title)}</td><td class="name"><small class="muted">linha ${x.d.line}</small> ${esc(x.d.title||x.d.sku||x.d.mlb||x.d.gtin)}</td><td><span class="pill ${x.score>=2?"full":x.score>=0.55?"":"warn"}">${esc(x.how)}</span></td><td class="n">${brl(x.a.cost)}</td><td class="n"><b>${brl(x.d.cost)}</b></td></tr>`).join("")}
+    </tbody></table></div>`:`<div class="state"><b>Nenhum anúncio casou com a planilha</b>Confira se os códigos ou nomes batem com os seus anúncios.</div>`}
+    ${IMP.unmatched.length?`<p class="note">${IMP.unmatched.length} linha(s) não casaram com nenhum anúncio${data.some(d=>d.sku)?"; as que têm SKU ficam guardadas e casam sozinhas quando você anunciar o produto":""}.</p>`:""}
+    <p class="note">Casamentos pelo nome abaixo de 55% vêm desmarcados: confira e marque só os certos.</p>
+    <div class="row"><button class="btn pri" id="impGo" ${matches.length||data.some(d=>d.sku)?"":"disabled"}>Importar custos</button><button class="btn" id="impCancel">Cancelar</button><span class="note" id="impGoMsg" role="status"></span></div></div>`;
+  $("#impCancel").onclick=()=>{ out.innerHTML=""; IMP=null; $("#impMsg").textContent=""; };
+  $("#impGo").onclick=doImport;
+  out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+async function doImport(){
+  if(!IMP) return; const btn=$("#impGo"), msg=$("#impGoMsg");
+  IMP.supplier=($("#impSup").value.trim()||"Planilha").slice(0,60);
+  const chosen=IMP.matches.filter((x,i)=>$("#imp_"+i)?.checked);
+  const skuRows=IMP.data.filter(d=>d.sku).map(d=>({sku:normSku(d.sku),gtin:d.gtin||"",title:d.title||"",cost:String(d.cost)}));
+  const direct=chosen.filter(x=>x.how==="Anúncio"||x.how.startsWith("Nome")).map(x=>({item_id:x.a.id,cost:String(x.d.cost),source:IMP.supplier}));
+  const viaSku=chosen.filter(x=>x.how==="SKU"||x.how==="Código de barras");
+  const extraGtin=viaSku.filter(x=>x.how==="Código de barras"&&!x.d.sku).map(x=>({sku:"EAN"+x.d.gtin,gtin:x.d.gtin,title:x.d.title||"",cost:String(x.d.cost)}));
+  if(!direct.length&&!skuRows.length&&!extraGtin.length){ msg.textContent="Marque pelo menos um anúncio."; return; }
+  btn.disabled=true; msg.innerHTML=`<span class="spin"></span>Importando…`;
+  const q=s=>s.replace(/'/g,"''"); const sup=q(IMP.supplier);
+  try{
+    const sp=skuRows.concat(extraGtin);
+    for(let i=0;i<sp.length;i+=400) await rpc("set_supplier_prices",sup,sp.slice(i,i+400));
+    for(let i=0;i<direct.length;i+=200) await rpc("set_costs",direct.slice(i,i+200));
+    msg.textContent=`Importado: ${chosen.length} anúncio(s). Recalculando…`;
+    IMP=null; await loadFin(true);
+  }catch(e){ btn.disabled=false; msg.textContent=errMsg(e); }
+}
+async function downloadTemplate(){
+  const P=finData?.projected||[]; const c=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lines=["Anúncio;Nome;SKU;Código de barras;Custo"].concat(P.map(x=>[x.id,c(x.title),x.sku||"",x.gtin||"",x.cost==null?"":String(x.cost).replace(".",",")].join(";")));
+  const csv="﻿"+lines.join("\r\n");
+  try{ const dl=MODE==="mcp"?await window.claude?.use?.("downloads"):{save:async({filename,data})=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv;charset=utf-8"}));a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}}; if(!dl) throw {code:"unavailable"}; await dl.save({filename:"custos-meus-anuncios.csv",data:csv}); $("#impMsg").textContent="Modelo baixado. Preencha a coluna Custo e envie de volta."; }
+  catch(e){ if(e?.code==="declined"){ $("#impMsg").textContent=""; return; } $("#impPaste").value=lines.join("\n"); $("#impMsg").textContent="Não deu para baixar aqui: coloquei o modelo na caixa ao lado para você copiar para o Excel."; }
+}
+
+/* ---------- saúde dos anúncios ---------- */
+let healthLoaded=false, healthData=null, healthFilter="todos";
+const ACT={"Pausar":["a-pausar",0],"Ajustar preço":["a-preco",1],"Ajustar anúncio":["a-anuncio",2],"Sem custo":["",3],"Escalar":["a-escalar",4],"Manter":["a-manter",5],"Aguardar":["",6]};
+$("#hRef").onclick=()=>loadSaude(true);
+async function loadSaude(fresh){
+  healthLoaded=true; const out=$("#healthOut"); loading(out,"Lendo visitas, pedidos, custos e preços do mercado de cada anúncio (até 1 minuto)…");
+  try{ healthData=await api("health",fresh?"fresh=1":"",{fresh:!!fresh,stale:1800000}); renderHealth(); }
+  catch(e){ healthLoaded=false; fail(out,e,()=>loadSaude(true)); }
+  loadService(fresh); if(fresh||!oppState.items.length) loadOpps(true); loadExt(fresh);
+}
+function renderHealth(){
+  const r=healthData||{}, L=(r.items||[]).slice().sort((a,b)=>(ACT[a.action]?.[1]??9)-(ACT[b.action]?.[1]??9)||(b.visits_30||0)-(a.visits_30||0));
+  const counts=r.count||{}; const v30=r.visits_30_total||0, s30=r.sold_30_total||0;
+  const acts=Object.keys(ACT).filter(k=>counts[k]);
+  const shown=healthFilter==="todos"?L:L.filter(x=>x.action===healthFilter);
+  $("#healthOut").innerHTML=`
+    <div class="tiles">
+      <div><span class="lbl">Visitas 30 dias</span><strong>${int(v30)}</strong><small>todos os anúncios</small></div>
+      <div><span class="lbl">Vendas 30 dias</span><strong>${int(s30)}</strong><small>pedidos pagos</small></div>
+      <div><span class="lbl">Conversão</span><strong>${v30?pct(s30/v30*100):"—"}</strong><small>vendas ÷ visitas</small></div>
+      <div><span class="lbl">Pedem ação</span><strong>${int(L.filter(x=>["Pausar","Ajustar preço","Ajustar anúncio","Sem custo"].includes(x.action)).length)}</strong><small>de ${int(L.length)} anúncios</small></div>
+    </div>
+    <div class="card">
+      <div class="filt" role="group" aria-label="Filtrar por ação"><button class="chip" data-f="todos" aria-pressed="${healthFilter==="todos"}">Todos ${L.length}</button>${acts.map(k=>`<button class="chip" data-f="${esc(k)}" aria-pressed="${healthFilter===k}">${esc(k)} ${counts[k]}</button>`).join("")}</div>
+      <div class="hl">${shown.map(healthItem).join("")||`<p class="note">Nenhum anúncio nesta ação.</p>`}</div>
+      <details class="how"><summary>Como o Oportuniza decide</summary>
+        <p><b>Preço mínimo</b> é o menor preço sem prejuízo, já com tarifa real do ML, envio, imposto e custo. <b>Preço ideal</b> é o que deixa a margem desejada (${pct(r.settings?.target_margin_pct??20)}, ajuste em Financeiro → Configurações). Os dois usam o custo de envio real que o ML cobra da sua conta em cada faixa de preço (abaixo de R$ 79 é o custo por unidade; a partir de R$ 79, sua parte do frete grátis), pelo peso de cada anúncio.</p>
+        <p><b>Pausar</b>: fornecedor sem estoque, ou prejuízo mesmo no preço mínimo acima do mais caro do mercado. <b>Ajustar preço</b>: prejuízo, ou preço 20% acima do mediano do mercado (com 2 ou mais vendedores). <b>Aguardar</b>: menos de 7 dias no ar. <b>Ajustar anúncio</b>: 30+ visitas e conversão abaixo de 1%, ou poucas visitas depois de 14 dias. <b>Escalar</b>: 3+ vendas, conversão de 2%+ e margem de 15%+.</p>
+        <p>Mercado: produto de catálogo equivalente ao seu anúncio, achado pelo vínculo de catálogo ou pelo nome. Confira o nome mostrado antes de mudar o preço.</p></details>
+    </div>`;
+  $("#healthOut").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{healthFilter=b.dataset.f;renderHealth()});
+}
+function healthItem(x){
+  const a=ACT[x.action]||["",9], m=x.market;
+  return `<div class="hi"><div class="t"><a class="lnk" href="${esc(x.permalink)}" target="_blank" rel="noopener">${esc(x.title)}</a>${x.status_ml&&x.status_ml!=="active"?` <span class="pill">${esc({paused:"pausado",closed:"finalizado",under_review:"em revisão",inactive:"inativo"}[x.status_ml]||x.status_ml)}</span>`:""}<br><small class="muted">${int(x.age_days)} dia(s) no ar · ${int(x.sold_total)} vendido(s) no total${x.supplier_stock!=null?` · ${int(x.supplier_stock)} no fornecedor`:""}</small></div>
+    <span class="pill act ${a[0]}">${esc(x.action)}</span>
+    <div class="kv">
+      <div><small>Preço atual</small><b>${brl(x.price)}</b></div>
+      ${x.suggested_price!=null?`<div class="sug"><small>Preço sugerido</small><b>${brl(x.suggested_price)}</b></div>`:`<div><small>Margem</small><b style="color:${x.margin<0?"var(--bad)":"inherit"}">${x.margin==null?"—":brl(x.margin)}</b></div>`}
+      <div><small>Preço mínimo</small><b>${brl(x.price_min)}</b></div>
+      <div><small>Preço ideal</small><b>${brl(x.price_ideal)}</b></div>
+      <div><small>Visitas 30d · 7d</small><b>${int(x.visits_30)} · ${int(x.visits_7)}</b></div>
+      <div><small>Vendas 30d · conv.</small><b>${int(x.sold_30)} · ${x.conversion==null?"—":pct(x.conversion)}</b></div>
+    </div>
+    <ul>${(x.reasons||[]).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+    ${m&&m.median!=null?`<div class="mk">Mercado: <b>${esc(m.name||"produto equivalente")}</b> · mediano ${brl(m.median)} · de ${brl(m.min)} a ${brl(m.max)} · ${int(m.sellers)} vendedor(es)${m.product_id&&okId(m.product_id)?` · <button class="lnk" data-prod="${esc(m.product_id)}">ver concorrentes</button>`:""}</div>`:`<div class="mk">Sem produto equivalente no catálogo para comparar preço.</div>`}
+  </div>`;
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-prod]"); if(b&&$("#v-saude").contains(b)) openProduct(b.dataset.prod);});
+
+/* atendimento: perguntas e reclamações */
+async function loadService(fresh){
+  const out=$("#svcOut"); out.innerHTML=`<div class="card"><h2>Atendimento</h2><div class="state"><span class="spin"></span>Lendo perguntas e reclamações…</div></div>`;
+  try{
+    const r=await api("service","",{fresh:!!fresh,stale:600000}); const q=r.questions||{}, c=r.claims||{};
+    const noPerm=q.status===403||c.status===403;
+    out.innerHTML=`<div class="card"><h2>Atendimento</h2>
+      ${noPerm?`<div class="state"><b>Falta uma permissão no Mercado Livre</b>Para ler perguntas e reclamações, o app do Oportuniza precisa da permissão “Comunicações pré e pós-venda” e de uma nova autorização da sua conta. Peça ao Claude: “libera perguntas e reclamações no Oportuniza”.</div>`:`
+      <div class="tiles">
+        <div><span class="lbl">Perguntas sem resposta</span><strong style="color:${q.unanswered?"var(--bad)":"inherit"}">${int(q.unanswered)}</strong><small>${int(q.answered_total)} respondidas no total</small></div>
+        <div><span class="lbl">Mais antiga</span><strong>${q.items?.length?int(Math.max(...q.items.map(i=>i.hours_open)))+" h":"—"}</strong><small>responda em até 1 hora</small></div>
+        <div><span class="lbl">Reclamações abertas</span><strong style="color:${c.open?"var(--bad)":"inherit"}">${int(c.open)}</strong><small>afetam a reputação</small></div>
+        <div><span class="lbl">Situação</span><strong>${(q.unanswered||c.open)?"Atenção":"Em dia"}</strong><small>${(q.unanswered||c.open)?"responda pelo app do ML":"nada pendente"}</small></div>
+      </div>
+      ${(q.items||[]).length?`<div style="display:flex;flex-direction:column;gap:8px">${q.items.map(i=>`<div class="qa"><small class="muted">${esc(i.item_title||i.item_id)} · há ${int(i.hours_open)} h</small><p>${esc(i.text)}</p></div>`).join("")}</div>`:""}
+      ${(c.items||[]).length?`<div class="scroll"><table><thead><tr><th>Aberta em</th><th>Tipo</th><th>Etapa</th><th>Motivo</th><th>Prazo</th></tr></thead><tbody>${c.items.map(i=>`<tr><td>${new Date(i.date).toLocaleDateString("pt-BR")}</td><td>${esc(i.type)}</td><td>${esc(i.stage)}</td><td>${esc(i.reason)}</td><td>${i.due?new Date(i.due).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—"}</td></tr>`).join("")}</tbody></table></div>`:""}`}
+    </div>`;
+  }catch(e){ out.innerHTML=`<div class="card"><h2>Atendimento</h2><div class="err">${esc(errMsg(e))}</div></div>`; }
+}
+
+/* oportunidades do fornecedor */
+const oppState={items:[],total:null,next:0,busy:false,filter:"Anunciar"};
+const VERD={"Anunciar":"full","Avaliar":"warn","Conferir":"warn","Não compensa":"bad","Sem referência":""};
+async function loadOpps(reset){
+  if(oppState.busy) return; if(reset){oppState.items=[];oppState.next=0;oppState.total=null;}
+  oppState.busy=true; renderOpps();
+  try{
+    while(oppState.next!=null&&(oppState.total==null||oppState.items.length<oppState.total)){
+      const r=await api("opps",`supplier=GoBoox&offset=${oppState.next}&limit=25`,{stale:3600000});
+      oppState.items.push(...(r.items||[])); oppState.total=r.total??oppState.items.length; oppState.next=r.next_offset??null;
+      renderOpps(); if(!(r.items||[]).length) break;
+    }
+  }catch(e){ oppState.err=errMsg(e); }
+  oppState.busy=false; renderOpps();
+}
+function renderOpps(){
+  const S=oppState, out=$("#oppOut");
+  if(S.total===0){ out.innerHTML=`<div class="card"><h2>Oportunidades no fornecedor</h2><p class="note">Todos os produtos da GoBoox com custo já estão anunciados, ou nenhum custo foi importado ainda.</p></div>`; return; }
+  const cnt={}; S.items.forEach(x=>cnt[x.verdict]=(cnt[x.verdict]||0)+1);
+  const list=S.items.filter(x=>S.filter==="todos"||x.verdict===S.filter).sort((a,b)=>(b.score||0)-(a.score||0));
+  const done=S.total?Math.min(100,S.items.length/S.total*100):0;
+  out.innerHTML=`<div class="card">
+    <div class="row" style="justify-content:space-between"><div><h2>Oportunidades no fornecedor</h2><p class="note" style="margin:4px 0 0">Produtos da GoBoox que você ainda não anuncia, avaliados contra o preço do mercado com a tarifa real.</p></div>${S.busy?"":`<button class="btn sm" id="oppRef">Reavaliar</button>`}</div>
+    ${S.busy||S.items.length<(S.total||0)?`<div><div class="prog"><i style="width:${done}%"></i></div><small class="muted">${S.busy?`<span class="spin"></span>`:""}${int(S.items.length)} de ${S.total==null?"…":int(S.total)} produtos avaliados</small></div>`:""}
+    ${S.err?`<div class="err">${esc(S.err)}</div>`:""}
+    <div class="filt" role="group" aria-label="Filtrar oportunidades">${["Anunciar","Avaliar","Conferir","Não compensa","Sem referência","todos"].filter(k=>k==="todos"||cnt[k]).map(k=>`<button class="chip" data-of="${esc(k)}" aria-pressed="${S.filter===k}">${k==="todos"?"Todos "+S.items.length:esc(k)+" "+cnt[k]}</button>`).join("")}</div>
+    ${list.length?`<div class="scroll"><table class="fin"><thead><tr><th>Produto GoBoox</th><th class="n">Custo</th><th class="n">Mercado</th><th class="n">Sobra no mediano</th><th class="n">Preço mín.</th><th>Veredito</th></tr></thead><tbody>
+      ${list.slice(0,60).map(x=>`<tr><td class="name">${esc((x.title||"").trim())}<br><small class="muted">${x.product_name?`Mercado: ${x.product_id&&okId(x.product_id)?`<button class="lnk" data-oprod="${esc(x.product_id)}">${esc(x.product_name)}</button>`:esc(x.product_name)} · ${int(x.sellers)} vendedor(es)`:"sem equivalente no catálogo"}${x.stock!=null?` · estoque ${int(x.stock)}`:""}</small><br><small>${esc(x.reason||"")}</small></td>
+        <td class="n" data-l="Custo">${brl(x.cost)}</td><td class="n" data-l="Mercado">${brl(x.market_median)}<br><small class="muted">mín. ${brl(x.market_min)}</small></td>
+        <td class="n" data-l="Sobra">${x.margin_at_market==null?"—":`<b style="color:${x.margin_at_market<0?"var(--bad)":"var(--good)"}">${brl(x.margin_at_market)}</b><br><small class="muted">${pct(x.margin_pct_at_market)}</small>`}</td>
+        <td class="n" data-l="Preço mín.">${brl(x.price_min)}<br><small class="muted">ideal ${brl(x.price_ideal)}</small></td>
+        <td data-l="Veredito"><span class="pill ${VERD[x.verdict]??""}">${esc(x.verdict)}</span>${x.confidence&&x.confidence!=="alta"?`<br><small class="muted">confiança ${esc(x.confidence)}</small>`:""}<br><button class="btn sm" data-addp="${esc(x.sku)}" style="margin-top:6px">+ Produtos</button></td></tr>`).join("")}
+    </tbody></table></div>${list.length>60?`<p class="note">Mostrando os 60 melhores de ${list.length}.</p>`:""}`:S.busy?"":`<p class="note">Nada nesta categoria.</p>`}
+    <p class="note">“Conferir” quer dizer que o produto equivalente no catálogo pode não ser o mesmo (poucos vendedores, nome diferente ou preço muito distante do custo). Abra e confira antes de anunciar.</p>
+  </div>`;
+  out.querySelectorAll("[data-of]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.of;renderOpps()});
+  out.querySelectorAll("[data-oprod]").forEach(b=>b.onclick=()=>openProduct(b.dataset.oprod));
+  out.querySelectorAll("[data-addp]").forEach(b=>b.onclick=async()=>{ b.disabled=true; b.innerHTML=`<span class="spin"></span>`; try{ const r=await rpc("product_from_supplier","GoBoox",b.dataset.addp); if(r?.error) throw {message:r.error}; b.textContent="✓ em Produtos"; prodLoaded=false; }catch(e){ b.disabled=false; b.textContent=errMsg(e); } });
+  const rf=$("#oppRef"); if(rf) rf.onclick=async()=>{ await invalidateCache(); loadOpps(true); };
+}
+
+/* extensão do Chrome */
+async function loadExt(fresh){
+  const out=$("#extOut");
+  try{
+    const r=await api("intel","",{fresh:!!fresh,stale:600000}); const s=r.summary||{};
+    out.innerHTML=`<div class="card"><h2>Extensão do Chrome</h2>
+      <p class="note">Com a extensão Oportuniza instalada, cada busca ou anúncio que você abre no Mercado Livre mostra vendidos, faturamento estimado, concorrência e principais vendedores, e fica gravado aqui. Com duas leituras em dias diferentes, o Oportuniza calcula vendas por mês dos concorrentes.</p>
+      <div class="tiles"><div><span class="lbl">Leituras</span><strong>${int(s.n||0)}</strong><small>gravadas pela extensão</small></div><div><span class="lbl">Anúncios acompanhados</span><strong>${int(s.items||0)}</strong><small>concorrentes</small></div><div><span class="lbl">Última leitura</span><strong style="font-size:15px">${s.last?new Date(s.last).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—"}</strong><small>${s.last?"":"instale e abra uma busca"}</small></div><div><span class="lbl">Instalação</span><strong style="font-size:15px">Uma vez só</strong><small>arquivo enviado pelo Claude, no Chrome do computador</small></div></div>
+    </div>`;
+  }catch(e){ out.innerHTML=""; }
+}
+
+/* ---------- produtos candidatos ---------- */
+const STAGES=[["descobrir","Descobrir"],["filtrar","Filtrar"],["validar","Validar"],["medir","Medir"],["escalar","Escalar"],["proteger","Proteger"],["descartado","Descartado"]];
+const KINDS=[["indefinido","Sem perfil"],["perene","Perene"],["sazonal","Sazonal"],["tendencia","Tendência"]];
+const SIGS=[["busca_crescendo","Busca crescendo (Google Trends)"],["videos_crescendo","Vídeos crescendo (TikTok, Reels)"],["anuncios_pagos","Anúncios pagos frequentes"],["comentarios_compra","Comentários com intenção de compra"],["recompra","Tem recompra"]];
+const MES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const KLASS={"Prioridade alta":"full","Testar":"warn","Observar":"","Evitar por enquanto":"bad"};
+let prodLoaded=false, prods=[], prodFilter="todos", prodOpen=null, vendCache=null;
+const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
+const sqlStr=o=>JSON.stringify(o).replace(/'/g,"''");
+async function loadVendCache(force){ if(!vendCache||force) vendCache=await rpc("vendors_list")||[]; return vendCache; }
+async function loadProds(){
+  prodLoaded=true; const out=$("#prodList"); loading(out,"Carregando produtos…");
+  try{ prods=await rpc("products_list")||[]; renderProds(); }
+  catch(e){ prodLoaded=false; fail(out,e,loadProds); }
+}
+$("#pAddForm").onsubmit=async e=>{ e.preventDefault(); const name=$("#pNew").value.trim(); if(!name) return;
+  $("#pAddBtn").disabled=true;
+  try{ const r=await rpc("save_product",{name,ml_query:name}); $("#pNew").value=""; prodOpen=Number(r?.id)||null; await loadProds(); if(prodOpen) evalProd(prodOpen,true); }
+  catch(err){ $("#pAddMsg").textContent=errMsg(err); } finally{ $("#pAddBtn").disabled=false; } };
+function renderProds(){
+  const out=$("#prodList"); const cnt={}; prods.forEach(p=>cnt[p.stage]=(cnt[p.stage]||0)+1);
+  const list=prodFilter==="todos"?prods.filter(p=>p.stage!=="descartado"):prods.filter(p=>p.stage===prodFilter);
+  const saz=prods.filter(p=>p.kind==="sazonal"&&(p.season_months||[]).length&&p.stage!=="descartado");
+  out.innerHTML=`
+    <div class="filt" role="group" aria-label="Etapa">${[["todos","Todos"]].concat(STAGES).filter(s=>s[0]==="todos"||cnt[s[0]]).map(s=>`<button class="chip" data-st="${s[0]}" aria-pressed="${prodFilter===s[0]}">${s[1]} ${s[0]==="todos"?prods.filter(p=>p.stage!=="descartado").length:cnt[s[0]]}</button>`).join("")}</div>
+    ${saz.length?`<div class="card"><h2>Calendário sazonal</h2><div class="cal">${MES.map((m,i)=>{const its=saz.filter(p=>(p.season_months||[]).includes(i+1)); const now=new Date().getMonth()===i; return `<div class="${now?"now":""}"><b>${m}</b>${its.map(p=>`<span>${esc(p.name)}</span>`).join("")}</div>`}).join("")}</div><p class="note">Compre ou anuncie até 2 meses antes do pico e evite sobra depois dele.</p></div>`:""}
+    ${list.length?list.map(prodCard).join(""):`<div class="state"><b>${prods.length?"Nada nesta etapa":"Nenhum produto ainda"}</b>Adicione um produto acima, ou use “+ Produtos” nas Oportunidades da aba Saúde.</div>`}`;
+  out.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>{prodFilter=b.dataset.st;renderProds()});
+  out.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>evalProd(Number(b.dataset.ev),true));
+  out.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.ed); prodOpen=prodOpen===id?null:id; renderProds();});
+  out.querySelectorAll("[data-mprod]").forEach(b=>b.onclick=()=>openProduct(b.dataset.mprod));
+  if(prodOpen) initEditor(prods.find(p=>Number(p.id)===prodOpen));
+}
+function bars(pt){ const L=[["Demanda","demanda",30],["Margem","margem",25],["Concorrência","concorrencia",15],["Logística","logistica",15],["Fornecedor","fornecedor",10],["Conteúdo","conteudo",5]];
+  return `<div class="bars">${L.map(([n,k,m])=>`<div><small>${n} <b>${int(pt?.[k]??0)}/${m}</b></small><span class="meter"><i style="width:${(pt?.[k]??0)/m*100}%"></i></span></div>`).join("")}</div>`; }
+function prodCard(p){
+  const e=p.eval, id=Number(p.id), open=prodOpen===id;
+  const best=e?.offers?.find(o=>String(o.vendor_id)===String(e.best_vendor_id));
+  return `<div class="card pc" id="pc_${id}">
+    <div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px">
+      <div style="min-width:0"><h2>${esc(p.name)}</h2><div class="row" style="gap:6px;margin-top:4px"><span class="pill">${esc(lbl(STAGES,p.stage))}</span><span class="pill">${esc(lbl(KINDS,p.kind))}</span>${(p.offers||[]).length?`<span class="pill">${p.offers.length} fornecedor(es)</span>`:""}${p.linked_item_id?`<span class="pill full">anunciado ${esc(p.linked_item_id)}</span>`:""}</div></div>
+      ${e?`<div class="sc"><span class="score ${e.score>=80?"s-quente":e.score>=65?"s-morno":""}">${int(e.score)}</span><span class="pill ${KLASS[e.class]??""}">${esc(e.class)}</span></div>`:""}
+    </div>
+    ${e?`<p class="rec">${esc(e.recommendation)}</p>${bars(e.parts)}
+      <div class="kv kv4">
+        <div><small>Mercado (mediano)</small><b>${brl(e.market?.median)}</b></div>
+        <div><small>Vendedores</small><b>${int(e.market?.sellers)}</b></div>
+        <div><small>Melhor custo</small><b>${best?brl(best.cost):"—"}</b></div>
+        <div><small>Preço mín. · ideal</small><b>${best?brl(best.price_min)+" · "+brl(best.price_ideal):"—"}</b></div>
+      </div>
+      ${e.market?`<div class="mk">Comparado com: <button class="lnk" data-mprod="${esc(e.market.product_id)}">${esc(e.market.name)}</button> · de ${brl(e.market.min)} a ${brl(e.market.max)} · frete ${brl(e.ship_at_market)} (${esc(e.ship_basis)})${(e.demand_why||[]).length?` · demanda: ${esc(e.demand_why.join(", "))}`:""}</div>`:""}
+      ${(e.notes||[]).length?`<ul class="nl">${e.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}`
+    :`<p class="note">Ainda não avaliado.</p>`}
+    <div class="row"><button class="btn sm pri" data-ev="${id}">${e?"Reavaliar":"Avaliar"}</button><button class="btn sm" data-ed="${id}" aria-expanded="${open}">${open?"Fechar":"Editar e fornecedores"}</button><span class="note" id="pmsg_${id}" role="status">${e?`avaliado ${new Date(e.at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
+    ${open?`<div class="ped" id="ped_${id}"><span class="spin"></span>Carregando…</div>`:""}
+  </div>`;
+}
+async function evalProd(id,fresh){
+  const m=$("#pmsg_"+id); if(m) m.innerHTML=`<span class="spin"></span>avaliando no Mercado Livre…`;
+  try{ const ev=await api("prod",`id=${id}${fresh?"&fresh=1":""}`,{fresh:true}); const p=prods.find(x=>Number(x.id)===id); if(p) p.eval=ev; renderProds(); }
+  catch(e){ if(m) m.textContent=errMsg(e); }
+}
+async function initEditor(p){
+  if(!p) return; const id=Number(p.id); const box=$("#ped_"+id); if(!box) return;
+  let V=[]; try{ V=await loadVendCache(); }catch(e){ box.innerHTML=`<div class="err">${esc(errMsg(e))}</div>`; return; }
+  const opt=v=>`<option value="${v.id}">${esc(v.name)}${v.city?` (${esc(v.city)}/${esc(v.uf)}${v.distance_km!=null?`, ${v.distance_km} km`:""})`:""}</option>`;
+  box.innerHTML=`
+    <div class="fields4">
+      <div class="f" style="grid-column:span 2"><label>Nome</label><div class="in"><input id="e_name" value="${esc(p.name)}" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+      <div class="f"><label>Etapa</label><select id="e_stage" class="sel">${STAGES.map(s=>`<option value="${s[0]}" ${p.stage===s[0]?"selected":""}>${s[1]}</option>`).join("")}</select></div>
+      <div class="f"><label>Perfil</label><select id="e_kind" class="sel">${KINDS.map(s=>`<option value="${s[0]}" ${p.kind===s[0]?"selected":""}>${s[1]}</option>`).join("")}</select></div>
+      <div class="f" style="grid-column:span 2"><label>Termo de busca no ML</label><div class="in"><input id="e_q" value="${esc(p.ml_query||"")}" placeholder="como o comprador procura" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+      <div class="f"><label>Produto do catálogo (MLB…)</label><div class="in"><input id="e_pid" value="${esc(p.ml_product_id||"")}" placeholder="opcional" style="padding-left:9px"></div></div>
+      <div class="f"><label>Anúncio meu (MLB…)</label><div class="in"><input id="e_item" value="${esc(p.linked_item_id||"")}" placeholder="quando anunciar" style="padding-left:9px"></div></div>
+      <div class="f"><label>Peso (g)</label><div class="in"><input id="e_w" inputmode="numeric" value="${p.weight_g??""}" style="padding-left:9px"></div></div>
+      <div class="f"><label>Medidas (cm, CxLxA)</label><div class="in"><input id="e_dims" value="${esc(p.dims||"")}" placeholder="20x15x5" style="padding-left:9px"></div></div>
+      <div class="f"><label>Potencial de conteúdo</label><select id="e_cont" class="sel">${[0,1,2,3,4,5].map(n=>`<option ${Number(p.content_score)===n?"selected":""}>${n}</option>`).join("")}</select></div>
+      <div class="f"><label>Qtd. para teste</label><div class="in"><input id="e_tq" inputmode="numeric" value="${p.test_qty??""}" style="padding-left:9px"></div></div>
+    </div>
+    <div class="f"><label>Meses de pico (sazonal)</label><div class="filt" id="e_months">${MES.map((m,i)=>`<button type="button" class="chip sm" data-m="${i+1}" aria-pressed="${(p.season_months||[]).includes(i+1)}">${m}</button>`).join("")}</div></div>
+    <div class="f"><label>Sinais de demanda fora do ML (marque o que você viu)</label><div class="chk">${SIGS.map(s=>`<label><input type="checkbox" data-sig="${s[0]}" ${(p.signals||[]).includes(s[0])?"checked":""}> ${s[1]}</label>`).join("")}
+      <label><input type="checkbox" id="e_frag" ${p.fragile?"checked":""}> Quebra fácil</label><label><input type="checkbox" id="e_reg" ${p.regulated?"checked":""}> Tem risco regulatório (Anvisa, Inmetro…)</label></div></div>
+    <div class="f"><label>Anotações</label><textarea id="e_notes" class="bmtext" rows="2">${esc(p.notes||"")}</textarea></div>
+    <h3 class="h3">Fornecedores deste produto</h3>
+    <div class="scroll"><table class="fin offt"><thead><tr><th>Fornecedor</th><th class="n">Custo</th><th class="n">Mín.</th><th class="n">Prazo (dias)</th><th class="n">Estoque</th><th>Confirmado em</th><th></th></tr></thead><tbody>
+      ${(p.offers||[]).map(o=>offerRow(o)).join("")}
+      <tr class="newoff"><td class="name"><select class="sel" id="o_new_v"><option value="">+ escolher fornecedor…</option>${V.filter(v=>v.status!=="descartado"&&!(p.offers||[]).some(o=>String(o.vendor_id)===String(v.id))).map(opt).join("")}</select></td>
+        <td class="n" data-l="Custo"><input class="cin" data-o="cost" inputmode="decimal" placeholder="R$"></td><td class="n" data-l="Mín."><input class="cin" data-o="moq" inputmode="numeric"></td><td class="n" data-l="Prazo"><input class="cin" data-o="lead_days" inputmode="numeric"></td><td class="n" data-l="Estoque"><input class="cin" data-o="stock" inputmode="numeric"></td><td data-l="Confirmado"><input class="cin dt" data-o="confirmed_at" type="date"></td><td></td></tr>
+    </tbody></table></div>
+    <p class="note">Não achou o fornecedor? Cadastre na aba Fornecedores (ou importe do Quem Fornece) e volte aqui.</p>
+    <div class="row"><button class="btn pri" id="e_save">Salvar e reavaliar</button><button class="btn sm" id="e_del">Excluir produto</button><span class="note" id="e_msg" role="status"></span></div>`;
+  box.querySelectorAll("#e_months [data-m]").forEach(b=>b.onclick=()=>b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true"));
+  box.querySelectorAll("[data-rmo]").forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ await rpc("set_offer",{product_id:id,vendor_id:b.dataset.rmo,remove:"true"}); await loadProds(); }catch(e){ $("#e_msg").textContent=errMsg(e); } });
+  $("#e_del").onclick=async()=>{ const b=$("#e_del"); if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="Toque de novo para excluir"; b.classList.add("danger"); return; } b.disabled=true; try{ await rpc("remove_product",id); prodOpen=null; await loadProds(); }catch(e){ $("#e_msg").textContent=errMsg(e); } };
+  $("#e_save").onclick=()=>saveProd(p);
+}
+function offerRow(o){
+  return `<tr data-vid="${esc(o.vendor_id)}"><td class="name">${esc(o.vendor)}<br><small class="muted">${o.city?esc(o.city)+"/"+esc(o.uf):""}${o.distance_km!=null?` · ${o.distance_km} km`:""}${o.vendor_status?` · ${esc(o.vendor_status)}`:""}</small></td>
+    <td class="n" data-l="Custo"><input class="cin" data-o="cost" inputmode="decimal" value="${o.cost==null?"":String(o.cost).replace(".",",")}"></td>
+    <td class="n" data-l="Mín."><input class="cin" data-o="moq" inputmode="numeric" value="${o.moq??""}"></td>
+    <td class="n" data-l="Prazo"><input class="cin" data-o="lead_days" inputmode="numeric" value="${o.lead_days??""}"></td>
+    <td class="n" data-l="Estoque"><input class="cin" data-o="stock" inputmode="numeric" value="${o.stock??""}"></td>
+    <td data-l="Confirmado"><input class="cin dt" data-o="confirmed_at" type="date" value="${esc(o.confirmed_at||"")}"></td>
+    <td><button class="btn sm" data-rmo="${esc(o.vendor_id)}" aria-label="Tirar fornecedor">✕</button></td></tr>`;
+}
+async function saveProd(p){
+  const id=Number(p.id), box=$("#ped_"+id), v=s=>box.querySelector(s);
+  const pay={id,name:v("#e_name").value.trim(),stage:v("#e_stage").value,kind:v("#e_kind").value,ml_query:v("#e_q").value.trim(),ml_product_id:v("#e_pid").value.trim().toUpperCase(),linked_item_id:v("#e_item").value.trim().toUpperCase(),
+    weight_g:v("#e_w").value.replace(/\D/g,""),dims:v("#e_dims").value.trim().toLowerCase().replace(/\s/g,""),content_score:v("#e_cont").value,test_qty:v("#e_tq").value.replace(/\D/g,""),notes:v("#e_notes").value,
+    fragile:v("#e_frag").checked,regulated:v("#e_reg").checked,season_months:[...box.querySelectorAll('#e_months [aria-pressed="true"]')].map(b=>Number(b.dataset.m)),signals:[...box.querySelectorAll("[data-sig]:checked")].map(c=>c.dataset.sig)};
+  if(pay.ml_product_id&&!/^MLB\d+$/.test(pay.ml_product_id)){ $("#e_msg").textContent="Código do catálogo deve ser MLB seguido de números."; return; }
+  if(pay.linked_item_id&&!/^MLB\d+$/.test(pay.linked_item_id)){ $("#e_msg").textContent="Anúncio deve ser MLB seguido de números."; return; }
+  const offers=[];
+  box.querySelectorAll("tr[data-vid]").forEach(tr=>{ const g=k=>tr.querySelector(`[data-o="${k}"]`).value.trim(); offers.push({product_id:id,vendor_id:tr.dataset.vid,cost:g("cost")===""?"":String(n2(g("cost"))),moq:g("moq").replace(/\D/g,""),lead_days:g("lead_days").replace(/\D/g,""),stock:g("stock").replace(/\D/g,""),confirmed_at:g("confirmed_at")}); });
+  const nv=v("#o_new_v").value; if(nv){ const tr=box.querySelector("tr.newoff"); const g=k=>tr.querySelector(`[data-o="${k}"]`).value.trim(); offers.push({product_id:id,vendor_id:nv,cost:g("cost")===""?"":String(n2(g("cost"))),moq:g("moq").replace(/\D/g,""),lead_days:g("lead_days").replace(/\D/g,""),stock:g("stock").replace(/\D/g,""),confirmed_at:g("confirmed_at")}); }
+  $("#e_save").disabled=true; $("#e_msg").innerHTML=`<span class="spin"></span>Salvando…`;
+  try{
+    await rpc("save_product",pay);
+    for(const o of offers) await rpc("set_offer",o);
+    await loadProds(); await evalProd(id,true);
+  }catch(e){ const m=$("#e_msg"); if(m){ m.textContent=errMsg(e); } const b=$("#e_save"); if(b) b.disabled=false; }
+}
+
+/* ---------- fornecedores ---------- */
+let vendLoaded=false, vendF={q:"",st:"todos",tipo:"",km:"",uf:""}, vendOpen=null, vendShow=60;
+const VST=["a contatar","cotação pedida","aprovado","descartado"];
+async function loadVend(force){
+  vendLoaded=true; const out=$("#vendList"); loading(out,"Carregando fornecedores…");
+  try{ await loadVendCache(true); renderVend(); }catch(e){ vendLoaded=false; fail(out,e,()=>loadVend(true)); }
+}
+$("#vAddForm").onsubmit=async e=>{ e.preventDefault(); const name=$("#vNew").value.trim(); if(!name) return;
+  try{ const r=await rpc("save_vendor",{name,city:$("#vCity").value.trim(),uf:$("#vUf").value.trim()}); $("#vNew").value=""; $("#vCity").value=""; $("#vUf").value=""; vendOpen=Number(r?.id)||null; await loadVend(true); }
+  catch(err){ $("#vAddMsg").textContent=errMsg(err); } };
+function renderVend(){
+  const V=vendCache||[], F=vendF, out=$("#vendList");
+  const has=(v,re)=>(v.tipos||[]).some(t=>re.test(t))||(re.source.includes("drop")&&v.dropship);
+  const TIP={drop:/dropshipping/i,atac:/atacado/i,fab:/fabricante/i,imp:/importador/i,rev:/revendas online/i};
+  const L=V.filter(v=>(F.st==="todos"?v.status!=="descartado":v.status===F.st)&&(!F.q||(v.name+" "+(v.city||"")+" "+(v.categorias||[]).join(" ")).toLowerCase().includes(F.q.toLowerCase()))&&(!F.tipo||has(v,TIP[F.tipo]))&&(!F.km||(v.distance_km!=null&&v.distance_km<=Number(F.km)))&&(!F.uf||v.uf===F.uf));
+  const ufs=[...new Set(V.map(v=>v.uf).filter(Boolean))].sort();
+  const cnt=s=>V.filter(v=>v.status===s).length;
+  out.innerHTML=`
+    <div class="tiles"><div><span class="lbl">Fornecedores</span><strong>${int(V.length)}</strong><small>${int(V.filter(v=>v.source==="quemfornece").length)} do Quem Fornece</small></div><div><span class="lbl">Até 200 km</span><strong>${int(V.filter(v=>v.distance_km!=null&&v.distance_km<=200).length)}</strong><small>de Araraquara</small></div><div><span class="lbl">Dropshipping</span><strong>${int(V.filter(v=>v.dropship).length)}</strong><small>atendem sem estoque</small></div><div><span class="lbl">Aprovados</span><strong>${int(cnt("aprovado"))}</strong><small>${int(cnt("cotação pedida"))} com cotação pedida</small></div></div>
+    <div class="card">
+      <div class="vf">
+        <div class="in"><input id="vfQ" placeholder="Buscar nome, cidade ou categoria" value="${esc(F.q)}" style="padding-left:9px;font-family:var(--f-body)"></div>
+        <select id="vfSt" class="sel"><option value="todos">Situação: todas</option>${VST.map(s=>`<option ${F.st===s?"selected":""}>${s}</option>`).join("")}</select>
+        <select id="vfT" class="sel"><option value="">Tipo: todos</option>${[["drop","Dropshipping"],["atac","Atacado"],["fab","Fabricante"],["imp","Importador"],["rev","Revenda online"]].map(t=>`<option value="${t[0]}" ${F.tipo===t[0]?"selected":""}>${t[1]}</option>`).join("")}</select>
+        <select id="vfK" class="sel"><option value="">Distância: qualquer</option>${[100,200,400,800].map(k=>`<option value="${k}" ${String(F.km)===String(k)?"selected":""}>até ${k} km</option>`).join("")}</select>
+        <select id="vfU" class="sel"><option value="">UF: todas</option>${ufs.map(u=>`<option ${F.uf===u?"selected":""}>${u}</option>`).join("")}</select>
+      </div>
+      <p class="note">${L.length} fornecedor(es). Distância aproximada por estrada até Araraquara.</p>
+      <div class="scroll"><table class="fin vt"><thead><tr><th>Fornecedor</th><th>Local</th><th>Tipo</th><th>Situação</th><th></th></tr></thead><tbody>
+      ${L.slice(0,vendShow).map(vendRow).join("")}</tbody></table></div>
+      ${L.length>vendShow?`<button class="btn" id="vMore">Mostrar mais ${Math.min(60,L.length-vendShow)}</button>`:""}
+    </div>`;
+  const re=()=>{vendShow=60;renderVend();};
+  $("#vfQ").oninput=e=>{F.q=e.target.value; clearTimeout(window.__vq); window.__vq=setTimeout(()=>{const pos=e.target.selectionStart; re(); const i=$("#vfQ"); i.focus(); i.setSelectionRange(pos,pos);},300);};
+  $("#vfSt").onchange=e=>{F.st=e.target.value;re()}; $("#vfT").onchange=e=>{F.tipo=e.target.value;re()}; $("#vfK").onchange=e=>{F.km=e.target.value;re()}; $("#vfU").onchange=e=>{F.uf=e.target.value;re()};
+  const m=$("#vMore"); if(m) m.onclick=()=>{vendShow+=60;renderVend()};
+  out.querySelectorAll("select[data-vst]").forEach(s=>s.onchange=async()=>{ s.disabled=true; try{ await rpc("save_vendor",{id:s.dataset.vst,status:s.value}); const v=(vendCache||[]).find(x=>String(x.id)===s.dataset.vst); if(v) v.status=s.value; }catch(e){ alertRow(s,errMsg(e)); } s.disabled=false; });
+  out.querySelectorAll("[data-vop]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.vop); vendOpen=vendOpen===id?null:id; renderVend();});
+  if(vendOpen) initVendEditor((vendCache||[]).find(v=>Number(v.id)===vendOpen));
+}
+function alertRow(el,msg){ const s=document.createElement("small"); s.className="muted"; s.textContent=msg; el.after(s); }
+function vendRow(v){
+  const id=Number(v.id), tp=(v.tipos||[]).map(t=>t.replace(/ \|.*$/,"").replace("Fornece Produtos para ","")).slice(0,3);
+  return `<tr><td class="name">${v.website?`<a class="lnk" href="${esc(v.website)}" target="_blank" rel="noopener">${esc(v.name)}</a>`:esc(v.name)}${v.source==="quemfornece"?` <a class="pill" href="https://quemfornece.com/fornecedor/${esc(v.ext_id)}" target="_blank" rel="noopener">Quem Fornece ↗</a>`:""}${v.offers?` <span class="pill full">${v.offers} produto(s)</span>`:""}</td>
+    <td data-l="Local">${v.city?esc(v.city)+"/"+esc(v.uf):"—"}${v.distance_km!=null?`<br><small class="muted">${int(v.distance_km)} km</small>`:""}</td>
+    <td data-l="Tipo">${v.dropship?`<span class="pill full">dropshipping</span> `:""}${tp.filter(t=>!/dropshipping/i.test(t)).map(t=>`<span class="pill">${esc(t)}</span>`).join(" ")}</td>
+    <td data-l="Situação"><select class="sel sm" data-vst="${id}" aria-label="Situação de ${esc(v.name)}">${VST.map(s=>`<option ${v.status===s?"selected":""}>${s}</option>`).join("")}</select></td>
+    <td><button class="btn sm" data-vop="${id}">${vendOpen===id?"Fechar":"Ficha"}</button></td></tr>
+    ${vendOpen===id?`<tr class="vrow"><td colspan="5"><div id="ved_${id}"></div></td></tr>`:""}`;
+}
+function initVendEditor(v){
+  if(!v) return; const id=Number(v.id), box=$("#ved_"+id); if(!box) return;
+  const yn=(k,val)=>`<select class="sel" id="v_${k}"><option value="" ${val==null?"selected":""}>não sei</option><option value="true" ${val===true?"selected":""}>sim</option><option value="false" ${val===false?"selected":""}>não</option></select>`;
+  box.innerHTML=`<div class="fields4">
+    <div class="f" style="grid-column:span 2"><label>Nome</label><div class="in"><input id="v_name" value="${esc(v.name)}" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+    <div class="f"><label>Cidade</label><div class="in"><input id="v_city" value="${esc(v.city||"")}" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+    <div class="f"><label>UF</label><div class="in"><input id="v_uf" value="${esc(v.uf||"")}" maxlength="2" style="padding-left:9px"></div></div>
+    <div class="f" style="grid-column:span 2"><label>Contato (WhatsApp, e-mail, nome)</label><div class="in"><input id="v_contact" value="${esc(v.contact||"")}" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+    <div class="f"><label>CNPJ</label><div class="in"><input id="v_cnpj" value="${esc(v.cnpj||"")}" style="padding-left:9px"></div></div>
+    <div class="f"><label>Site</label><div class="in"><input id="v_web" value="${esc(v.website||"")}" style="padding-left:9px;font-family:var(--f-body)"></div></div>
+    <div class="f"><label>Qtd. mínima</label><div class="in"><input id="v_moq" inputmode="numeric" value="${v.moq??""}" style="padding-left:9px"></div></div>
+    <div class="f"><label>Prazo de despacho (dias)</label><div class="in"><input id="v_lead" inputmode="numeric" value="${v.lead_days??""}" style="padding-left:9px"></div></div>
+    <div class="f"><label>Emite nota fiscal</label>${yn("nf",v.nf)}</div>
+    <div class="f"><label>Aceita troca</label>${yn("ex",v.exchange)}</div>
+    <div class="f"><label>Faz dropshipping</label>${yn("ds",v.dropship)}</div>
+    <div class="f"><label>Estoque confirmado em</label><div class="in"><input id="v_conf" type="date" value="${esc(v.stock_confirmed_at||"")}" style="padding-left:9px"></div></div>
+  </div>
+  <div class="f"><label>Anotações</label><textarea id="v_notes" class="bmtext" rows="2">${esc(v.notes||"")}</textarea></div>
+  ${(v.categorias||[]).length?`<p class="note">Categorias no Quem Fornece: ${esc(v.categorias.join(", "))}</p>`:""}
+  <div class="row"><button class="btn pri" id="v_save">Salvar ficha</button>${v.source!=="goboox"?`<button class="btn sm" id="v_del">Excluir</button>`:""}<span class="note" id="v_msg" role="status"></span></div>`;
+  $("#v_save").onclick=async()=>{ const g=s=>$(s).value.trim();
+    const pay={id,name:g("#v_name"),city:g("#v_city"),uf:g("#v_uf"),contact:g("#v_contact"),cnpj:g("#v_cnpj"),website:g("#v_web"),moq:g("#v_moq").replace(/\D/g,""),lead_days:g("#v_lead").replace(/\D/g,""),nf:g("#v_nf"),exchange:g("#v_ex"),dropship:g("#v_ds"),stock_confirmed_at:g("#v_conf"),notes:$("#v_notes").value};
+    $("#v_save").disabled=true; $("#v_msg").innerHTML=`<span class="spin"></span>Salvando…`;
+    try{ await rpc("save_vendor",pay); await loadVend(true); }catch(e){ $("#v_msg").textContent=errMsg(e); $("#v_save").disabled=false; } };
+  const d=$("#v_del"); if(d) d.onclick=async()=>{ if(d.dataset.ok!=="1"){ d.dataset.ok="1"; d.textContent="Toque de novo para excluir"; d.classList.add("danger"); return; } d.disabled=true; try{ await rpc("remove_vendor",id); vendOpen=null; await loadVend(true); }catch(e){ $("#v_msg").textContent=errMsg(e); } };
+}
+
+$("#vRef").onclick=()=>loadVend(true);
+
+/* ---------- conta ---------- */
+let contaLoaded=false;
+async function loadConta(fresh){
+  contaLoaded=true; const out=$("#contaOut"); loading(out,"Lendo seus anúncios e vendas…");
+  try{
+    const r=await api("account","",{fresh:!!fresh,stale:600000}); const a=r.account||{}; const items=r.items||[];
+    const parados=items.filter(i=>i.status==="active"&&!i.sold);
+    const tr=a.transactions||{}; const m=a.metrics||{};
+    out.innerHTML=`<div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card"><div class="row" style="justify-content:space-between"><div><span class="lbl">Conta vinculada</span><h1>${esc(a.nickname)}</h1></div><button class="btn" id="cRef">Atualizar</button></div>
+        <div class="row"><span class="lbl">Reputação</span><span class="rep" style="width:80px"><i style="width:${repW(a.level)}%;background:${repColor(a.level)}"></i></span><span>${esc(a.level||"ainda sem cor (precisa de vendas)")}</span>${a.power?`<span class="pill full">${esc(a.power)}</span>`:""}</div></div>
+      <div class="tiles">
+        <div><span class="lbl">Anúncios</span><strong>${int(items.length)}</strong><small>${int(items.filter(i=>i.status==="active").length)} ativos</small></div>
+        <div><span class="lbl">Sem nenhuma venda</span><strong>${int(parados.length)}</strong><small>anúncios ativos</small></div>
+        <div><span class="lbl">Vendas na história</span><strong>${int(tr.total)}</strong><small>${int(tr.completed)} concluídas · ${int(tr.canceled)} canceladas</small></div>
+        <div><span class="lbl">Pedidos recentes</span><strong>${int(r.orders_total)}</strong><small>no Mercado Livre</small></div>
+      </div>
+      ${m.claims||m.delayed_handling_time||m.cancellations?`<div class="tiles">
+        <div><span class="lbl">Reclamações</span><strong>${pct((m.claims?.rate||0)*100)}</strong><small>${int(m.claims?.value)} no período</small></div>
+        <div><span class="lbl">Atrasos no envio</span><strong>${pct((m.delayed_handling_time?.rate||0)*100)}</strong><small>${int(m.delayed_handling_time?.value)} no período</small></div>
+        <div><span class="lbl">Cancelamentos</span><strong>${pct((m.cancellations?.rate||0)*100)}</strong><small>${int(m.cancellations?.value)} no período</small></div>
+        <div><span class="lbl">Mediações</span><strong>${pct((m.mediations?.rate||0)*100)}</strong><small>${int(m.mediations?.value)} no período</small></div></div>`:""}
+      <div class="card"><h2>Seus anúncios</h2>
+        <div class="scroll"><table><thead><tr><th>Anúncio</th><th class="n">Preço</th><th class="n">Vendidos</th><th class="n">Estoque</th><th>Status</th><th>Criado</th></tr></thead><tbody>
+        ${items.sort((x,y)=>(y.sold||0)-(x.sold||0)).map(i=>`<tr><td class="name"><a class="lnk" href="${esc(i.permalink)}" target="_blank" rel="noopener">${esc(i.title)}</a><br><span class="pill">${esc(i.listing_type)}</span></td>
+          <td class="n">${brl(i.price)}</td><td class="n">${int(i.sold)}</td><td class="n">${int(i.stock)}</td>
+          <td>${i.status==="active"?(i.sold?`<span class="pill full">vendendo</span>`:`<span class="pill warn">sem vendas</span>`):`<span class="pill bad">${esc({paused:"pausado",closed:"finalizado",under_review:"em revisão",inactive:"inativo"}[i.status]||i.status)}</span>`}</td>
+          <td>${i.created?new Date(i.created).toLocaleDateString("pt-BR"):"—"}</td></tr>`).join("")}
+        </tbody></table></div></div>
+      ${(r.orders||[]).length?`<div class="card"><h2>Últimos pedidos</h2><div class="scroll"><table><thead><tr><th>Data</th><th>Itens</th><th>Status</th><th class="n">Total</th></tr></thead><tbody>
+        ${r.orders.map(o=>`<tr><td>${new Date(o.date).toLocaleDateString("pt-BR")}</td><td class="name">${esc(o.items)}</td><td>${esc(o.status)}</td><td class="n">${brl(o.total)}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+    </div>`;
+    $("#cRef").onclick=()=>loadConta(true);
+    out.insertAdjacentHTML("beforeend",`<div class="card" style="margin-top:14px"><h2>Acessos</h2>
+      <div class="f"><label for="extKey">Chave da extensão do Chrome</label><div class="row"><input id="extKey" class="bmtext" readonly style="flex:1;max-width:420px" value="Carregando…"><button class="btn sm" id="extCopy">Copiar</button></div><small class="muted">Cole no ícone da extensão Oportuniza (campo “Chave”) uma vez só.</small></div>
+      <div class="row"><a class="btn" id="mlRelink" href="#" target="_blank" rel="noopener">Vincular a conta do Mercado Livre de novo</a>${MODE==="web"?`<button class="btn" id="btnOut">Sair</button>`:""}<span class="note" id="accMsg" role="status"></span></div></div>`);
+    getKeys().then(k=>{ $("#extKey").value=k.ext_key; $("#mlRelink").href=k.ml_login; }).catch(e=>{ $("#accMsg").textContent=errMsg(e); });
+    $("#extCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText($("#extKey").value); $("#accMsg").textContent="Chave copiada."; }catch(_){ $("#extKey").select(); } };
+    const bo=$("#btnOut"); if(bo) bo.onclick=logout;
+  }catch(e){contaLoaded=false;fail(out,e,()=>loadConta(true))}
+}
+
+/* ---------- boot ---------- */
+function showLogin(msg){ const l=$("#login"); l.hidden=false; if(msg) $("#lgMsg").textContent=msg; }
+function hideLogin(){ $("#login").hidden=true; }
+$("#lgForm").onsubmit=async e=>{ e.preventDefault(); const email=$("#lgEmail").value.trim(); if(!email) return;
+  $("#lgBtn").disabled=true; $("#lgMsg").innerHTML=`<span class="spin"></span>Enviando…`;
+  try{ const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}}); if(error) throw error;
+    $("#lgMsg").textContent=`Pronto. Abra o e-mail enviado para ${email} e toque no link. Pode fechar esta aba depois.`; }
+  catch(err){ $("#lgMsg").textContent="Não deu para enviar: "+(err.message||err); }
+  finally{ $("#lgBtn").disabled=false; } };
+async function logout(){ if(sb){ await sb.auth.signOut(); } await invalidateCache(); location.reload(); }
+mcpReady=(async()=>{
+  try{ if(window.claude?.use){ mcp=await window.claude.use("mcp"); if(mcp){ MODE="mcp"; return; } } }catch(_){ mcp=null; }
+  MODE="web";
+  if(!window.supabase){ showLogin("Não consegui carregar o login. Verifique a internet e recarregue."); await new Promise(()=>{}); }
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}});
+  let {data:{session}}=await sb.auth.getSession();
+  if(!session){
+    showLogin();
+    session=await new Promise(res=>{ sb.auth.onAuthStateChange((ev,s)=>{ if(s) res(s); }); });
+  }
+  hideLogin();
+  if(location.hash.includes("access_token")) history.replaceState(null,"",location.pathname+location.search);
+})();
+(async()=>{
+  await mcpReady;
+  try{ const s=await api("status","",{stale:300000}); $("#acctDot").className="dot "+(s.linked?"on":"off"); $("#acctTxt").textContent=s.linked?(s.account?.nickname||"Conta vinculada"):"Conta ML não vinculada"; }
+  catch(e){ $("#acctDot").className="dot off"; $("#acctTxt").textContent=e.code==="server_not_connected"?"Conecte o Supabase":e.code==="login"?"Sem acesso":"Sem conexão"; }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Oportuniza",
+  "version": "1.4.0",
+  "description": "Mostra vendas estimadas e concorrência no Mercado Livre e importa fornecedores do Quem Fornece para o seu Oportuniza.",
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_title": "Oportuniza",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://dbikbgbgplosqwnovhvr.supabase.co/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.mercadolivre.com.br/*"
+      ],
+      "js": [
+        "parse.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://quemfornece.com/*",
+        "https://www.quemfornece.com/*"
+      ],
+      "js": [
+        "qf.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

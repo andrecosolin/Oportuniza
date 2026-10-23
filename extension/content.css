@@ -1,0 +1,28 @@
+#radarml-panel{position:fixed;z-index:2147483646;right:16px;bottom:16px;width:340px;max-height:70vh;overflow:auto;background:#1B2430;color:#F1F3F6;font:13px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.35)}
+#radarml-panel .rml-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #2E3744;position:sticky;top:0;background:#1B2430}
+#radarml-panel .rml-head b{font-size:14px;color:#F4A06B}
+#radarml-panel .rml-st{flex:1;color:#A9B2BF;font-size:12px}
+#radarml-panel .rml-min{background:#2E3744;color:#F1F3F6;border:0;border-radius:6px;width:26px;height:24px;cursor:pointer;font-size:15px;line-height:1}
+#radarml-panel.rml-closed{width:auto}
+#radarml-panel.rml-closed .rml-body{display:none}
+#radarml-panel .rml-body{padding:10px 12px 12px}
+#radarml-panel .rml-sub{color:#A9B2BF;font-size:12px;margin-bottom:8px}
+#radarml-panel .rml-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#radarml-panel .rml-grid div{background:#263040;border-radius:8px;padding:6px 8px;min-width:0}
+#radarml-panel .rml-grid small{display:block;color:#A9B2BF;font-size:11px}
+#radarml-panel .rml-grid b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+#radarml-panel .rml-note{color:#C9D0DA;font-size:12px;margin:8px 0 0}
+#radarml-panel .rml-err{color:#FFB4A8;margin:0}
+#radarml-panel .rml-hot{color:#FF9F87}
+#radarml-panel .rml-warm{color:#FFD27A}
+#radarml-panel .rml-cold{color:#B8C98A}
+#radarml-panel .rml-t{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+#radarml-panel .rml-t th{color:#A9B2BF;text-align:left;font-weight:500}
+#radarml-panel .rml-t td,#radarml-panel .rml-t th{padding:3px 4px;border-bottom:1px solid #2E3744}
+#radarml-panel .rml-t td:not(:first-child),#radarml-panel .rml-t th:not(:first-child){text-align:right}
+.rml-badge{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;font:12px/1.3 system-ui,sans-serif}
+.rml-badge span{background:#DCE7F2;color:#163A5E;border-radius:6px;padding:2px 6px}
+.rml-badge i{font-style:normal;opacity:.7}
+@media (max-width:700px){#radarml-panel{left:8px;right:8px;width:auto;bottom:8px}}
+#radarml-panel .rml-btn{margin-top:10px;width:100%;background:#E8692A;color:#1B2430;border:0;border-radius:8px;padding:9px;font:600 13px system-ui,sans-serif;cursor:pointer}
+#radarml-panel .rml-btn:disabled{opacity:.6;cursor:wait}
