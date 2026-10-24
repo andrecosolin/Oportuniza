@@ -1198,10 +1198,11 @@ function prodCard(p){
         <div><small>Preço mín. · ideal</small><b>${best?brl(best.price_min)+" · "+brl(best.price_ideal):"—"}</b></div>
       </div>
       ${e.market?`<div class="mk">Comparado com: <button class="lnk" data-mprod="${esc(e.market.product_id)}">${esc(e.market.name)}</button> · de ${brl(e.market.min)} a ${brl(e.market.max)} · frete ${brl(e.ship_at_market)} (${esc(e.ship_basis)})${(e.demand_why||[]).length?` · demanda: ${esc(e.demand_why.join(", "))}`:""}</div>`:""}
+      ${e.ext&&(e.ext.gtrends||e.ext.shopee)?`<div class="mk">Fora do ML: ${e.ext.gtrends?`Google <b>${esc(e.ext.gtrends.label)}</b>${e.ext.gtrends.seasonal&&(e.ext.gtrends.peak_months||[]).length?` (pico em ${e.ext.gtrends.peak_months.map(m=>MES[m-1]).join(", ")})`:""}`:"Google sem leitura"} · ${e.ext.shopee?`Shopee: mediana ${int(e.ext.shopee.sold_median_top20)} vendidos nos 20 mais vendidos, preço mediano ${brl(e.ext.shopee.price_median)}`:"Shopee sem leitura"}</div>`:""}
       ${(e.notes||[]).length?`<ul class="nl">${e.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul>`:""}`
     :`<p class="note">Ainda não avaliado.</p>`}
     ${p.draft?draftBlock(p):""}
-    <div class="row"><button class="btn sm pri" data-ev="${id}">${e?"Reavaliar":"Avaliar"}</button><button class="btn sm" data-ed="${id}" aria-expanded="${open}">${open?"Fechar":"Editar e fornecedores"}</button><span class="note" id="pmsg_${id}" role="status">${e?`avaliado ${new Date(e.at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
+    <div class="row"><button class="btn sm pri" data-ev="${id}">${e?"Reavaliar":"Avaliar"}</button><button class="btn sm" data-ed="${id}" aria-expanded="${open}">${open?"Fechar":"Editar e fornecedores"}</button><a class="btn sm" href="https://trends.google.com.br/trends/explore?geo=BR&date=today%205-y&q=${encodeURIComponent(p.ml_query||p.name)}" target="_blank" rel="noopener" title="A extensão lê a busca e grava aqui">Google Trends</a><a class="btn sm" href="https://shopee.com.br/search?keyword=${encodeURIComponent(p.ml_query||p.name)}" target="_blank" rel="noopener" title="A extensão lê a busca e grava aqui">Shopee</a><span class="note" id="pmsg_${id}" role="status">${e?`avaliado ${new Date(e.at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:""}</span></div>
     ${open?`<div class="ped" id="ped_${id}"><span class="spin"></span>Carregando…</div>`:""}
   </div>`;
 }

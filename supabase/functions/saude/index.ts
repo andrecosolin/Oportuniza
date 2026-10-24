@@ -111,9 +111,9 @@ const pretty = (p: number) => { const x = Math.ceil(p) - 0.1; return r2(x >= p ?
 /* preço de mercado: produto de catálogo parecido e seus vendedores */
 const STOP = new Set("de da do das dos com para por em e a o as os um uma kit cor".split(" "));
 function queryFrom(title: string) {
-  return String(title).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 1 && !STOP.has(w.toLowerCase())).slice(0, 6).join(" ");
+  return String(title).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 1 && !STOP.has(w.toLowerCase())).slice(0, 6).join(" ");
 }
-function toks(s: string) { return new Set(String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w))); }
+function toks(s: string) { return new Set(String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w))); }
 function sim(a: string, b: string) { const A = toks(a), B = toks(b); if (!A.size || !B.size) return 0; let n = 0; A.forEach((w) => { if (B.has(w)) n++; }); return 2 * n / (A.size + B.size); }
 async function offersOf(pid: string) {
   const r = await ok(`/products/${pid}/items?limit=50`);
@@ -334,6 +334,10 @@ async function routeProd(id: number, fresh: boolean) {
     const em = ext[0]?.med != null ? Number(ext[0].med) : null;
     if (em != null && ext[0].n >= 3) { const pts = em >= 1000 ? 10 : em >= 100 ? 7 : em >= 25 ? 4 : 1; dem += pts; demWhy.push(`top anúncios lidos pela extensão vendem ${em >= 1000 ? "+" + Math.round(em / 1000) + " mil" : "+" + Math.round(em)} (mediana)`); }
   }
+  // fora do ML: Google Trends e Shopee lidos pela extensão
+  let ext: any = null;
+  try { ext = (await sql`select radar.ext_demand(${q}) d`)[0]?.d ?? null; } catch (_) { ext = null; }
+  if (ext) { dem += Number(ext.pts) || 0; for (const w of ext.why ?? []) demWhy.push(w); }
   if (sellers != null && sellers >= 10) { dem += 3; demWhy.push(`${sellers} vendedores ativos no catálogo`); }
   for (const s of P.signals ?? []) { const d = SIGNALS[s]; if (d) { dem += d[0]; demWhy.push(d[1]); } }
   dem = Math.min(dem, 30);
@@ -391,7 +395,7 @@ async function routeProd(id: number, fresh: boolean) {
   if (!mk) notes.push("Não achei o produto no catálogo do ML: informe o código do produto (MLB…) ou um termo de busca melhor.");
   if (best?.capital_test) notes.push(`Capital para o teste na quantidade mínima: ${brl(best.capital_test)}.`);
 
-  const ev = { score, class: klass, parts: { demanda: dem, margem: marg, concorrencia: comp, logistica: log, fornecedor: sup, conteudo: cont }, demand_why: demWhy,
+  const ev = { score, class: klass, parts: { demanda: dem, margem: marg, concorrencia: comp, logistica: log, fornecedor: sup, conteudo: cont }, demand_why: demWhy, ext: ext ? { gtrends: ext.gtrends ?? null, shopee: ext.shopee ?? null } : null,
     market: mk ? { product_id: mk.product_id, name: mk.product_name, median: med, min: num(mk.min_price), max: num(mk.max_price), sellers, full_pct: num(mk.full_pct), similarity: num(mk.similarity) } : null,
     category_id: cat, fee_pct: feePct, ship_at_market: shipMed, ship_basis: w == null ? "300 g padrão" : `${w} g`, offers: evalOffers, best_vendor_id: best?.vendor_id ?? null,
     recommendation: parts.join(", ") + ". " + action, notes, at: new Date().toISOString() };

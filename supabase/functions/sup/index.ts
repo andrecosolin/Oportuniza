@@ -156,9 +156,26 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "use POST" }, 405);
   try {
     const b = JSON.parse(await req.text());
-    if (b?.kind === "snap" || b?.kind === "est" || b?.kind === "qf" || b?.kind === "draft" || b?.kind === "gbx") {
+    if (b?.kind === "snap" || b?.kind === "est" || b?.kind === "qf" || b?.kind === "draft" || b?.kind === "gbx" || b?.kind === "sig") {
       if (!b.k || b.k !== await key("ext_key")) return json({ error: "não autorizado" }, 401);
       if (b.kind === "draft") return json(await draft(b.listing ?? {}));
+      if (b.kind === "sig") {
+        // Google Trends e Shopee lidos pela extensão
+        const source = String(b.source ?? ""); if (!["gtrends", "shopee"].includes(source)) return json({ error: "fonte inválida" }, 400);
+        const term = String(b.term ?? "").trim().slice(0, 120); if (!term) return json({ error: "termo vazio" }, 400);
+        const data = b.data && typeof b.data === "object" ? b.data : {};
+        if (JSON.stringify(data).length > 200000) return json({ error: "dados grandes demais" }, 400);
+        await sql`insert into radar.ext_signals (source, term, term_norm, geo, data) values (${source}, ${term}, radar.norm_term(${term}), ${txt(b.geo, 8)}, ${sql.json(data)})`;
+        let products = 0;
+        if (source === "gtrends") {
+          // perfil automático: sazonal (com meses de pico) ou tendência, só em produtos ainda sem perfil
+          const months = (Array.isArray(data.peak_months) ? data.peak_months : []).map(Number).filter((m: number) => m >= 1 && m <= 12);
+          const kind = data.seasonal && months.length ? "sazonal" : data.fad ? "tendencia" : null;
+          if (kind) products = (await sql`update radar.products set kind = ${kind}, season_months = case when ${kind} = 'sazonal' then ${months}::int[] else season_months end, updated_at = now()
+            where coalesce(kind,'indefinido') = 'indefinido' and cardinality(radar.term_words(${term})) > 0 and radar.term_words(${term}) <@ radar.term_words(coalesce(ml_query, name)) returning id`).length;
+        }
+        return json({ ok: true, products });
+      }
       if (b.kind === "gbx") {
         // varredura do agente: catálogo completo da GoBoox lido pela extensão, depois compara com o ML
         const items = (Array.isArray(b.items) ? b.items : []).slice(0, 20000)

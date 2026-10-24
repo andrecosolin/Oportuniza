@@ -26,7 +26,7 @@ Ferramenta pessoal para achar e validar produtos, comparar fornecedores, calcula
 docs/                 página publicada no GitHub Pages (gerada)
 src/app.html          código da página (o mesmo arquivo roda como artifact no claude.ai)
 tools/build.py        gera docs/index.html a partir de src/app.html
-extension/            extensão do Chrome (Mercado Livre, Quem Fornece e varredura da GoBoox)
+extension/            extensão do Chrome (Mercado Livre, Shopee, Google Trends, Quem Fornece e varredura da GoBoox)
 supabase/functions/   Edge Functions: app (porta da página), ml, fin, saude, sup, pub (publicar no ML e agente de estoque)
 supabase/migrations/  estrutura do banco (schema radar) e funções
 tools/bookmarklet-goboox.js  botão de favoritos que importa custos da GoBoox
@@ -39,6 +39,7 @@ tools/bookmarklet-goboox.js  botão de favoritos que importa custos da GoBoox
 - **Mercado Livre, financeiro e avaliações:** Edge Function `app`, que confere o dono e repassa para `ml`, `fin` e `saude` com a chave interna.
 - **Extensão:** lê as páginas do ML e do Quem Fornece e envia para a função `sup`. A chave fica no próprio Chrome (copie em Minha conta > Acessos).
 - **Anúncio do concorrente:** o painel mostra desde quando ele está no ar (data da avaliação mais antiga, porque o ML não publica a data de criação), avaliações do último mês e reclamações (1 a 3 estrelas). O botão **Criar anúncio melhor** monta um rascunho em Produtos: títulos sugeridos, palavras-chave, ficha técnica, reclamações dos compradores, checklist e descrição base. Fotos e texto do concorrente não são copiados.
+- **Fora do ML:** a extensão lê a busca da Shopee (vendidos, preço) e o Google Trends (subindo, estável, caindo, sazonal com meses de pico, moda passageira). Isso soma na nota de demanda do produto e preenche o perfil sazonal sozinho. O card do produto tem atalhos para abrir os dois no termo certo.
 - **Publicar no ML:** no rascunho, "Publicar no Mercado Livre" abre a categoria, os campos obrigatórios da ficha, preço, estoque, tipo de anúncio, garantia, as suas fotos e a descrição. "Conferir com o ML" valida sem publicar e mostra a tarifa; "Publicar" pede dois toques e, por padrão, cria o anúncio pausado.
 
 Nenhuma chave fica no repositório: todas são geradas no banco e lidas depois do login.
