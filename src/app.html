@@ -233,7 +233,7 @@ table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
 .req{color:var(--bad)}
 .chk1{display:flex;gap:8px;align-items:center;font-size:14px}
 .pubok{background:var(--good-soft);color:var(--good-text);border-radius:10px;padding:10px 12px;font-size:14px}
-.pubbox .err ul{margin:6px 0 0;padding-left:18px}
+.pubbox .err ul,.pubok ul{margin:6px 0 0;padding-left:18px}
 .cin.dt{width:140px;font-size:13px}
 .vf{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:860px){.vf{grid-template-columns:1fr 1fr}.vf .in{grid-column:1/-1}}
@@ -1239,7 +1239,7 @@ async function openPublish(id,btn){
   const title=d.chosen_title||P.title;
   box.innerHTML=`
     <p class="note">Categoria: <b>${esc(P.category.path.join(" › ")||P.category.name)}</b> (${esc(P.category.id)})</p>
-    <div class="f"><label for="pt_${id}">Título</label><div class="in"><input id="pt_${id}" maxlength="60" value="${esc(title)}" style="padding-left:9px;font-family:var(--f-body)"></div><small class="muted" id="ptc_${id}">${title.length}/60</small></div>
+    <div class="f"><label for="pt_${id}">Nome do produto <span class="muted" style="font-weight:400">(o ML monta o título final com ele e a ficha)</span></label><div class="in"><input id="pt_${id}" maxlength="60" value="${esc(title)}" style="padding-left:9px;font-family:var(--f-body)"></div><small class="muted" id="ptc_${id}">${title.length}/60</small></div>
     <div class="fields4">
       <div class="f"><label for="pp_${id}">Preço (R$)</label><div class="in"><input id="pp_${id}" inputmode="decimal" value="${best?.price_ideal?String(best.price_ideal).replace(".",","):""}" placeholder="${P.ref_price?"concorrente "+String(P.ref_price).replace(".",","):""}" style="padding-left:9px"></div>${best?`<small class="muted">ideal pela sua margem: ${brl(best.price_ideal)}</small>`:""}</div>
       <div class="f"><label for="pq_${id}">Estoque</label><div class="in"><input id="pq_${id}" inputmode="numeric" value="${best?.stock?Math.min(best.stock,50):""}" style="padding-left:9px"></div><small class="muted">quantas você consegue entregar</small></div>
@@ -1248,7 +1248,8 @@ async function openPublish(id,btn){
     </div>
     <h3 class="h3">Fotos <span class="muted" style="font-weight:400">(suas, até ${P.category.max_pictures}; a primeira com fundo branco)</span></h3>
     <div class="pics" id="pg_${id}"></div>
-    <label class="btn sm" style="width:max-content">Adicionar fotos<input type="file" id="pf_${id}" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+    <div class="row"><label class="btn sm" style="width:max-content">Adicionar fotos do computador<input type="file" id="pf_${id}" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+      <div class="in" style="flex:1;min-width:200px"><input id="pu_${id}" placeholder="ou cole o link da foto (ex.: do fornecedor)" style="padding-left:9px;font-family:var(--f-body)"></div><button class="btn sm" id="pub_${id}">Adicionar link</button></div>
     <h3 class="h3">Ficha técnica <span class="muted" style="font-weight:400">(* obrigatório no ML; o que veio do concorrente está preenchido, confira com o seu produto)</span></h3>
     <div class="fields2">${P.fields.map((f,i)=>fieldInput(f,id+"_"+i)).join("")}</div>
     <h3 class="h3">Descrição</h3>
@@ -1268,6 +1269,12 @@ async function openPublish(id,btn){
       catch(err){ S.pics.splice(S.pics.indexOf(it),1); m.textContent=errMsg(err); }
       drawPics(); }
     S.valid=false; $("#pgo_"+id).disabled=true; };
+  $("#pub_"+id).onclick=async()=>{ const u=$("#pu_"+id).value.trim(), m=$("#pm_"+id); if(!/^https:\/\//.test(u)){ m.textContent="Cole um link que comece com https://"; return; }
+    if(S.pics.length>=P.category.max_pictures){ m.textContent="Limite de fotos da categoria atingido."; return; }
+    const it={local:u,busy:true}; S.pics.push(it); drawPics(); $("#pu_"+id).value="";
+    try{ const r=await pub({action:"upload",url:u}); if(!r.ok) throw new Error(r.error||"falhou"); it.id=r.id; it.url=r.url||u; it.busy=false; }
+    catch(err){ S.pics.splice(S.pics.indexOf(it),1); m.textContent=errMsg(err); }
+    drawPics(); S.valid=false; $("#pgo_"+id).disabled=true; };
   const collect=()=>{ const attrs=[];
     P.fields.forEach((f,i)=>{ const el=$("#pf_"+id+"_"+i); if(!el) return; const v=el.value.trim(); if(!v) return;
       if(el.dataset.kind==="id") attrs.push({id:f.id,value_id:v});
@@ -1278,7 +1285,7 @@ async function openPublish(id,btn){
       warranty_type:wt,warranty_days:wt==="nenhuma"?0:Number($("#pw_"+id).value.replace(/\D/g,""))||0,pictures:S.pics.filter(p=>p.id).map(p=>p.id),attributes:attrs,description:$("#pd_"+id).value,paused:$("#pz_"+id).checked,product_id:id}; };
   const missing=()=>{ const out=[]; P.fields.forEach((f,i)=>{ const el=$("#pf_"+id+"_"+i); if(f.required&&el&&!el.value.trim()) out.push(f.name); }); return out; };
   const showRes=(r,okTxt)=>{ const box2=$("#pr_"+id);
-    box2.innerHTML=r.ok?`<div class="pubok">${okTxt}${r.fee!=null?` Tarifa do ML nesse preço: ${brl(r.fee)}${r.fee_pct?` (${String(r.fee_pct).replace(".",",")}%)`:""}.`:""}</div>`
+    box2.innerHTML=r.ok?`<div class="pubok">${okTxt}${r.fee!=null?` Tarifa do ML nesse preço: ${brl(r.fee)}${r.fee_pct?` (${String(r.fee_pct).replace(".",",")}%)`:""}.`:""}${(r.causes||[]).length?`<ul>${r.causes.map(c=>`<li>${esc(c.message)}</li>`).join("")}</ul>`:""}</div>`
       :`<div class="err"><b>${esc(r.message||r.error||"O ML apontou problemas:")}</b>${(r.causes||[]).length?`<ul>${r.causes.map(c=>`<li>${c.type==="warning"?"Aviso: ":""}${esc(c.message)}</li>`).join("")}</ul>`:""}</div>`; };
   $("#pv_"+id).onclick=async()=>{ const m=$("#pm_"+id), b=$("#pv_"+id); const miss=missing();
     if(S.pics.some(p=>p.busy)){ m.textContent="Espere as fotos terminarem de subir."; return; }

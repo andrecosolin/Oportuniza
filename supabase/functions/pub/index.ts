@@ -39,7 +39,7 @@ async function ml(method: string, path: string, body?: unknown, raw?: BodyInit, 
   return { status: r.status, body: b };
 }
 const okGet = async (p: string) => { const r = await ml("GET", p); return r.status === 200 ? r.body : null; };
-const norm = (s: string) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const norm = (s: string) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /* ---------- prepara o formulário: categoria, atributos obrigatórios, tipos de anúncio ---------- */
 async function prepare(id: number) {
@@ -73,11 +73,15 @@ async function prepare(id: number) {
     fields, ref_price: d.from?.price ?? null, weight_g: p.weight_g, dims: p.dims };
 }
 
-/* ---------- foto: sobe para o ML e devolve o id ---------- */
+/* ---------- foto: sobe para o ML e devolve o id (arquivo do computador ou link, ex. foto do fornecedor) ---------- */
 async function upload(b: any) {
-  const data = String(b.data ?? ""); const type = String(b.type ?? "image/jpeg");
+  let type = String(b.type ?? "image/jpeg"); let bytes: Uint8Array;
+  if (b.url) {
+    const u = String(b.url); if (!/^https:\/\//.test(u)) throw new Error("Link da foto precisa começar com https://");
+    const r = await fetch(u); if (!r.ok) throw new Error(`Não consegui baixar a foto (${r.status}).`);
+    type = (r.headers.get("content-type") ?? "image/jpeg").split(";")[0].trim(); bytes = new Uint8Array(await r.arrayBuffer());
+  } else bytes = Uint8Array.from(atob(String(b.data ?? "")), (c) => c.charCodeAt(0));
   if (!/^image\/(jpeg|png|webp)$/.test(type)) throw new Error("Use foto JPG, PNG ou WEBP.");
-  const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
   if (bytes.length < 2000 || bytes.length > 9e6) throw new Error("Foto muito pequena ou muito grande.");
   const fd = new FormData(); fd.append("file", new Blob([bytes], { type }), "foto." + type.split("/")[1]);
   const tok = await accessToken();
@@ -101,17 +105,23 @@ function buildItem(b: any) {
   const sale_terms: any[] = [];
   if (b.warranty_days > 0) sale_terms.push({ id: "WARRANTY_TYPE", value_name: b.warranty_type === "fabrica" ? "Garantia de fábrica" : "Garantia do vendedor" }, { id: "WARRANTY_TIME", value_name: `${Math.round(b.warranty_days)} dias` });
   else sale_terms.push({ id: "WARRANTY_TYPE", value_name: "Sem garantia" });
-  return { title, category_id: String(b.category_id), price, currency_id: "BRL", available_quantity: qty, buying_mode: "buy_it_now",
+  // conta no modelo "User Products": o ML não aceita title; ele monta o título com family_name + ficha
+  return { family_name: title, category_id: String(b.category_id), price, shipping: { mode: "me2" }, currency_id: "BRL", available_quantity: qty, buying_mode: "buy_it_now",
     listing_type_id: b.listing_type_id === "gold_pro" ? "gold_pro" : "gold_special", condition: "new", pictures: pics.map((id: string) => ({ id })), attributes, sale_terms };
 }
-const causes = (body: any) => (body?.cause ?? []).filter((c: any) => c.type !== "warning" || true).map((c: any) => ({ type: c.type, code: c.code, message: c.message, refs: c.references ?? [] }));
+// avisos que não impedem a publicação (o ML devolve 400 mesmo quando só há avisos)
+const NOISE = new Set(["shipping.lost_me1_by_user"]);
+const PT: Record<string, string> = { "item.shipping.mandatory_free_shipping": "Frete grátis obrigatório nesse preço (a partir de R$ 79): o ML coloca automaticamente e você paga parte do frete." };
+const causes = (body: any) => (body?.cause ?? []).filter((c: any) => !NOISE.has(c.code)).map((c: any) => ({ type: c.type, code: c.code, message: PT[c.code] ?? c.message, refs: c.references ?? [] }));
+const onlyWarnings = (body: any) => Array.isArray(body?.cause) && body.cause.every((c: any) => c.type === "warning");
 
 async function validate(b: any) {
   const item = buildItem(b);
   const r = await ml("POST", "/items/validate", item);
   const fees = await okGet(`/sites/MLB/listing_prices?price=${item.price}&category_id=${item.category_id}&listing_type_id=${item.listing_type_id}`);
   const fee = Array.isArray(fees) ? fees[0] : fees;
-  return { ok: r.status === 204 || r.status === 200, status: r.status, causes: r.status === 204 ? [] : causes(r.body), message: r.body?.message ?? null, fee: fee?.sale_fee_amount ?? null, fee_pct: fee?.sale_fee_details?.percentage_fee ?? null };
+  const ok = r.status === 204 || r.status === 200 || (r.status === 400 && onlyWarnings(r.body));
+  return { ok, status: r.status, causes: r.status === 204 ? [] : causes(r.body), message: ok ? null : r.body?.message ?? null, fee: fee?.sale_fee_amount ?? null, fee_pct: fee?.sale_fee_details?.percentage_fee ?? null };
 }
 
 async function publish(b: any) {
@@ -127,7 +137,7 @@ async function publish(b: any) {
   const desc = String(b.description ?? "").replace(/\r/g, "").trim();
   if (desc) { const d = await ml("POST", `/items/${itemId}/description`, { plain_text: desc.slice(0, 50000) }); steps.push(d.status < 300 ? "descrição ok" : `descrição recusada (${d.status}): ${d.body?.message ?? ""}`); }
   if (b.paused) { const s = await ml("PUT", `/items/${itemId}`, { status: "paused" }); steps.push(s.status < 300 ? "pausado" : `não pausou (${s.status})`); }
-  const pub = { item_id: itemId, permalink: r.body.permalink ?? null, status: b.paused ? "paused" : r.body.status, at: new Date().toISOString(), title: item.title, price: item.price, steps };
+  const pub = { item_id: itemId, permalink: r.body.permalink ?? null, status: b.paused ? "paused" : r.body.status, at: new Date().toISOString(), title: r.body.title ?? item.family_name, family_name: item.family_name, price: item.price, steps };
   await sql`update radar.products set linked_item_id = ${itemId}, stage = case when stage in ('descobrir','filtrar') then 'validar' else stage end, draft = coalesce(draft, '{}'::jsonb) || ${sql.json({ published: pub })}, updated_at = now() where id = ${id}`;
   return { ok: true, ...pub };
 }
