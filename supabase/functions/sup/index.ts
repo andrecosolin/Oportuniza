@@ -156,9 +156,21 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "use POST" }, 405);
   try {
     const b = JSON.parse(await req.text());
-    if (b?.kind === "snap" || b?.kind === "est" || b?.kind === "qf" || b?.kind === "draft") {
+    if (b?.kind === "snap" || b?.kind === "est" || b?.kind === "qf" || b?.kind === "draft" || b?.kind === "gbx") {
       if (!b.k || b.k !== await key("ext_key")) return json({ error: "não autorizado" }, 401);
       if (b.kind === "draft") return json(await draft(b.listing ?? {}));
+      if (b.kind === "gbx") {
+        // varredura do agente: catálogo completo da GoBoox lido pela extensão, depois compara com o ML
+        const items = (Array.isArray(b.items) ? b.items : []).slice(0, 20000)
+          .map((x: any) => ({ sku: String(x.sku ?? "").trim().slice(0, 120), gtin: x.gtin ? String(x.gtin).slice(0, 20) : "", title: String(x.title ?? "").slice(0, 200), cost: x.cost == null || x.cost === "" ? "" : String(Number(x.cost)), stock: x.stock == null ? "" : String(parseInt(x.stock) || 0), url: x.url ? String(x.url).slice(0, 300) : "" }))
+          .filter((x: any) => x.sku);
+        if (items.length < 5) return json({ error: "Li poucos produtos da GoBoox. Confira se está logado e tente de novo." }, 400);
+        const n = (await sql`select radar.set_supplier_prices('GoBoox', ${sql.json(items)}) as n`)[0].n;
+        await sql`insert into radar.supplier_imports (supplier, n, full_catalog, source) values ('GoBoox', ${n}, ${b.full !== false}, 'extensao')`;
+        const r = await fetch(`${(Deno.env.get("SUPABASE_URL") ?? "https://dbikbgbgplosqwnovhvr.supabase.co")}/functions/v1/pub`, { method: "POST", headers: { "x-radar-key": (await key("internal_key")) ?? "", "content-type": "application/json" }, body: JSON.stringify({ action: "sync", source: "extensao GoBoox" }) });
+        const j = await r.json().catch(() => ({ ok: false, error: "resposta inválida do agente" }));
+        return json({ ok: !!j.ok, saved: n, ...j });
+      }
       if (b.kind === "qf") {
         const items = (Array.isArray(b.items) ? b.items : []).slice(0, 3000).map((x: any) => ({ ext_id: txt(x.slug, 160), name: txt(x.nome, 160), city: txt(x.cidade, 80), uf: txt(x.estado, 2), website: txt(x.website, 300), tipos: (Array.isArray(x.tipo) ? x.tipo : []).slice(0, 20).map((t: any) => String(t).slice(0, 80)), categorias: [txt(b.category, 80)].filter(Boolean) })).filter((x: any) => x.ext_id && x.name);
         if (!items.length) return json({ error: "nenhum fornecedor válido" }, 400);

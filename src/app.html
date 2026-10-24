@@ -221,6 +221,17 @@ table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
 .tl .tt{flex:1 1 260px;font-weight:600;min-width:0}
 .tl [aria-pressed="true"]{background:var(--good-soft);color:var(--good-text);border-color:transparent}
 .pc.flash{box-shadow:0 0 0 3px var(--accent)}
+.neg{color:var(--bad)}
+.agl{display:flex;flex-direction:column}
+.agc{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.agc:first-child{border-top:0}
+.agc-h{display:flex;gap:10px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.agc small{display:block}
+.num{font-family:var(--f-num)}
+details.card>summary{cursor:pointer;list-style:none}
+details.card>summary::before{content:"▸ ";color:var(--act-text)}
+details.card[open]>summary::before{content:"▾ "}
+details.card[open]>summary{margin-bottom:10px}
 .pubbox{border-top:1px dashed var(--line);padding-top:12px}
 .pubbox>*+*{margin-top:12px}
 .fields2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
@@ -260,6 +271,7 @@ tr.vrow td{background:var(--bg)}
       <button role="tab" id="tab-prods" aria-selected="false" data-v="prods">Produtos</button>
       <button role="tab" id="tab-vend" aria-selected="false" data-v="vend">Fornecedores</button>
       <button role="tab" id="tab-saude" aria-selected="false" data-v="saude">Saúde</button>
+      <button role="tab" id="tab-agente" aria-selected="false" data-v="agente">Agente</button>
       <button role="tab" id="tab-fin" aria-selected="false" data-v="fin">Financeiro</button>
       <button role="tab" id="tab-conta" aria-selected="false" data-v="conta">Minha conta</button>
     </nav>
@@ -333,6 +345,18 @@ tr.vrow td{background:var(--bg)}
     <div id="svcOut" style="margin-top:14px"></div>
     <div id="oppOut" style="margin-top:14px"></div>
     <div id="extOut" style="margin-top:14px"></div>
+  </section>
+
+  <!-- AGENTE -->
+  <section id="v-agente" role="tabpanel" aria-labelledby="tab-agente" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h1>Agente de estoque</h1><p class="lead">Confere o estoque e o custo dos fornecedores com os seus anúncios do ML. Pausa o que zerou e reativa o que voltou, sozinho. Preço fica para você decidir.</p></div>
+        <button class="btn pri" id="agRun">Varrer agora</button>
+      </div>
+      <p class="note" id="agMsg" role="status">Para ler a GoBoox de novo, abra app.goboox.com.br com a extensão e toque em “Varrer estoque agora”. Aqui, “Varrer agora” usa a última leitura de cada fornecedor.</p>
+    </div>
+    <div id="agOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"><div class="state"><span class="spin"></span>Carregando…</div></div>
   </section>
 
   <!-- FINANCEIRO -->
@@ -458,9 +482,9 @@ const repColor=l=>!l?"var(--line)":l.startsWith("5")?"#1B9E4B":l.startsWith("4")
 const repW=l=>l?(parseInt(l)||0)*20:0;
 
 /* ---------- abas ---------- */
-const VIEWS=["pesquisa","nichos","produto","prods","vend","saude","fin","conta"];
+const VIEWS=["pesquisa","nichos","produto","prods","vend","saude","agente","fin","conta"];
 function show(v){VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v;$("#tab-"+x).setAttribute("aria-selected",x===v)});
-  if(v==="nichos"&&!catsLoaded) loadCats(); if(v==="conta"&&!contaLoaded) loadConta(); if(v==="fin"&&!finLoaded) loadFin(); if(v==="saude"&&!healthLoaded) loadSaude(); if(v==="prods"&&!prodLoaded) loadProds(); if(v==="vend"&&!vendLoaded) loadVend(); window.scrollTo({top:0});}
+  if(v==="nichos"&&!catsLoaded) loadCats(); if(v==="conta"&&!contaLoaded) loadConta(); if(v==="fin"&&!finLoaded) loadFin(); if(v==="saude"&&!healthLoaded) loadSaude(); if(v==="prods"&&!prodLoaded) loadProds(); if(v==="agente"&&!agLoaded) loadAgente(); if(v==="vend"&&!vendLoaded) loadVend(); window.scrollTo({top:0});}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
 /* ---------- pesquisa ---------- */
@@ -1122,8 +1146,8 @@ function focusDeep(){ if(!prodDeep) return; const p=prods.find(x=>Number(x.id)==
   if(p.stage==="descartado"||(prodFilter!=="todos"&&prodFilter!==p.stage)){ prodFilter=p.stage==="descartado"?"descartado":"todos"; renderProds(); }
   const el=$("#pc_"+prodDeep); if(el){ el.scrollIntoView({behavior:"smooth",block:"start"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),2200); }
   if(!p.eval) evalProd(prodDeep,false); }
-function readHash(){ let id=(/#prod=(\d+)/.exec(location.hash)||[])[1]; try{ id=id||localStorage.getItem("opz-prod"); localStorage.removeItem("opz-prod"); }catch(_){}
-  if(!id) return false; prodDeep=Number(id); if(location.hash) history.replaceState(null,"",location.pathname+location.search); prodLoaded=false; show("prods"); return true; }
+function readHash(){ if(/#agente/.test(location.hash)){ history.replaceState(null,"",location.pathname+location.search); agLoaded=false; show("agente"); return true; } let id=(/#prod=(\d+)/.exec(location.hash)||[])[1]; try{ id=id||localStorage.getItem("opz-prod"); localStorage.removeItem("opz-prod"); }catch(_){}
+  if(!id) return false; if(id==="agente"){ agLoaded=false; show("agente"); return true; } prodDeep=Number(id); if(location.hash) history.replaceState(null,"",location.pathname+location.search); prodLoaded=false; show("prods"); return true; }
 window.addEventListener("hashchange",()=>{ mcpReady.then(readHash); });
 $("#pAddForm").onsubmit=async e=>{ e.preventDefault(); const name=$("#pNew").value.trim(); if(!name) return;
   $("#pAddBtn").disabled=true;
@@ -1369,6 +1393,59 @@ async function saveProd(p){
   }catch(e){ const m=$("#e_msg"); if(m){ m.textContent=errMsg(e); } const b=$("#e_save"); if(b) b.disabled=false; }
 }
 
+/* ---------- agente de estoque ---------- */
+let agLoaded=false;
+const AGK={pausar:["Pausar","bad"],reativar:["Reativar","full"],estoque:["Estoque",""],preco:["Preço","warn"],sumiu:["Sumiu",""]};
+const agWhen=d=>d?new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+function agChange(c,actions){
+  const b=c.before||{}, a=c.after||{}, k=AGK[c.kind]||[c.kind,""];
+  const what=a.status==="paused"?"pausar":a.status==="active"?`reativar com ${int(a.available_quantity)}`:a.available_quantity!=null?`${int(b.available_quantity)} → ${int(a.available_quantity)}`:a.price!=null?`${brl(b.price)} → ${brl(a.price)}`:"";
+  return `<div class="agc"><div class="agc-h"><b>${esc(c.title||c.item_id)}</b><span><span class="pill ${k[1]}">${k[0]}</span> <span class="num">${esc(what)}</span></span></div>
+    <small class="muted"><a href="https://produto.mercadolivre.com.br/${esc(String(c.item_id).replace("MLB","MLB-"))}" target="_blank" rel="noopener">${esc(c.item_id)}</a> · ${esc(c.reason||"")}</small>${c.error?`<small class="neg">Erro no ML: ${esc(c.error)}</small>`:""}
+    ${actions?`<div class="row" style="gap:6px"><button class="btn sm pri" data-agap="${c.id}">Aplicar</button><button class="btn sm" data-agig="${c.id}">Ignorar</button></div>`:`<small class="muted">${c.status==="ignorado"?"ignorado em ":"aplicado em "}${agWhen(c.applied_at||c.at)}</small>`}</div>`;
+}
+async function loadAgente(){
+  agLoaded=true; const out=$("#agOut"); loading(out,"Carregando o agente…");
+  let A; try{ A=await pub({action:"agent"}); }catch(e){ agLoaded=false; out.innerHTML=`<div class="card"><div class="err">${esc(errMsg(e))}</div></div>`; return; }
+  const last=A.runs?.[0], s=last?.summary||null, st=A.settings;
+  out.innerHTML=`
+    ${s?`<div class="card"><h2>Última varredura <span class="muted" style="font-weight:400;font-size:14px">${agWhen(last.at)} · ${esc(last.source||"")}</span></h2>
+      <div class="tiles">
+        <div><span class="lbl">Anúncios conferidos</span><strong>${int(s.items)}</strong><small>${int(s.matched)} ligados a fornecedor</small></div>
+        <div><span class="lbl">Aplicado sozinho</span><strong>${int(s.applied)}</strong><small>${int(s.pausar)} pausa(s) · ${int(s.reativar)} reativação(ões) · ${int(s.estoque)} estoque</small></div>
+        <div><span class="lbl">Para você decidir</span><strong>${int((A.pending||[]).length)}</strong><small>${int(s.preco)} preço(s)${s.errors?` · ${int(s.errors)} erro(s)`:""}</small></div>
+        <div><span class="lbl">Novos no fornecedor</span><strong>${int(s.new_products)}</strong><small>${int(s.not_listed)} com estoque e sem anúncio</small></div>
+      </div>
+      ${s.unmatched?`<p class="note">${int(s.unmatched)} anúncio(s) sem SKU ou código de barras de fornecedor: o agente não mexe neles.${s.with_variations?` ${int(s.with_variations)} com variações ficam de fora por enquanto.`:""}</p>`:""}
+    </div>`:`<div class="card"><div class="state"><b>Nenhuma varredura ainda</b>Abra a GoBoox com a extensão e toque em “Varrer estoque agora”, ou use “Varrer agora” aqui com a última leitura.</div></div>`}
+    ${(A.pending||[]).length?`<div class="card"><div class="row" style="justify-content:space-between"><h2>Para você decidir</h2>${A.pending.length>1?`<button class="btn sm" id="agAll">Aplicar todas</button>`:""}</div>
+      <div class="agl">${A.pending.map(c=>agChange(c,true)).join("")}</div></div>`:""}
+    ${s&&(s.new_list||[]).length?`<div class="card"><h2>Novos no fornecedor</h2><p class="note">Apareceram desde a leitura anterior e ainda não estão anunciados.</p>
+      <div class="scroll"><table class="fin"><thead><tr><th>Produto</th><th class="n">Custo</th><th class="n">Estoque</th><th></th></tr></thead><tbody>${s.new_list.map(p=>`<tr><td class="name">${esc(p.title||p.sku)}<br><small class="muted">${esc(p.supplier)} · ${esc(p.sku)}</small></td><td class="n" data-l="Custo">${brl(p.cost)}</td><td class="n" data-l="Estoque">${int(p.stock)}</td><td>${p.supplier==="GoBoox"?`<button class="btn sm" data-agnew="${esc(p.sku)}">+ Produtos</button>`:""}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+    <div class="card"><h2>Regras</h2>
+      <div class="fields4">
+        <div class="f"><label for="agRes">Reserva de segurança</label><div class="in"><input id="agRes" inputmode="numeric" value="${int(st.sync_reserve)}" style="padding-left:9px"></div><small class="muted">pausa quando o fornecedor tiver isto ou menos</small></div>
+        <div class="f"><label for="agCap">Máximo publicado</label><div class="in"><input id="agCap" inputmode="numeric" value="${int(st.sync_cap)}" style="padding-left:9px"></div><small class="muted">teto da quantidade, se o agente cuidar dela</small></div>
+        <div class="f" style="grid-column:span 2"><label>Mudanças seguras</label><label class="chk1"><input type="checkbox" id="agAuto" ${Number(st.sync_auto)===1?"checked":""}><span>Aplicar sozinho (pausar e reativar o que o agente pausou)</span></label>
+          <label class="chk1"><input type="checkbox" id="agQty" ${Number(st.sync_qty)===1?"checked":""}><span>Agente também acerta a quantidade (deixe desligado se o fornecedor já sincroniza, como a GoBoox)</span></label></div>
+      </div>
+      <div class="row"><button class="btn sm" id="agSave">Salvar regras</button><span class="note" id="agSmsg" role="status"></span></div>
+      <p class="note">Fornecedores lidos: ${(A.suppliers||[]).map(x=>`${esc(x.supplier)} (${int(x.items)} produtos, ${int(x.in_stock)} com estoque, atualizado ${agWhen(x.updated_at)})`).join(" · ")||"nenhum"}</p>
+    </div>
+    ${s&&(s.unmatched_list||[]).length?`<details class="card"><summary><b>Anúncios sem vínculo com fornecedor (${int(s.unmatched)})</b></summary><p class="note">Coloque o SKU do fornecedor (ex.: GBX-123) no campo SKU do anúncio no ML para o agente cuidar dele.</p><ul class="nl" style="color:var(--ink)">${s.unmatched_list.map(u=>`<li>${esc(u.title)} <small class="muted">${esc(u.item_id)}${u.sku?` · SKU ${esc(u.sku)} não encontrado`:""}</small></li>`).join("")}</ul></details>`:""}
+    ${(A.recent||[]).length?`<details class="card"><summary><b>Histórico (${int(A.recent.length)})</b></summary><div class="agl">${A.recent.map(c=>agChange(c,false)).join("")}</div></details>`:""}`;
+  const act=async(action,ids,b)=>{ b.disabled=true; b.innerHTML=`<span class="spin"></span>`; try{ const r=await pub({action,ids}); if(r.errors) $("#agMsg").textContent=`${r.errors} mudança(s) com erro: veja o motivo na lista.`; await loadAgente(); }catch(e){ b.disabled=false; b.textContent=errMsg(e); } };
+  out.querySelectorAll("[data-agap]").forEach(b=>b.onclick=()=>act("apply",[Number(b.dataset.agap)],b));
+  out.querySelectorAll("[data-agig]").forEach(b=>b.onclick=()=>act("ignore",[Number(b.dataset.agig)],b));
+  const all=$("#agAll"); if(all) all.onclick=()=>{ if(all.dataset.ok!=="1"){ all.dataset.ok="1"; all.textContent=`Toque de novo: aplicar ${A.pending.length}`; return; } act("apply",A.pending.map(c=>c.id),all); };
+  out.querySelectorAll("[data-agnew]").forEach(b=>b.onclick=async()=>{ b.disabled=true; b.innerHTML=`<span class="spin"></span>`; try{ const r=await rpc("product_from_supplier","GoBoox",b.dataset.agnew); if(r?.error) throw {message:r.error}; b.textContent="✓ em Produtos"; prodLoaded=false; }catch(e){ b.disabled=false; b.textContent=errMsg(e); } });
+  $("#agSave").onclick=async()=>{ const m=$("#agSmsg"); const res=Math.max(0,parseInt($("#agRes").value)||0), cap=Math.max(1,parseInt($("#agCap").value)||1);
+    try{ await rpc("set_settings",{sync_reserve:res,sync_cap:cap,sync_auto:$("#agAuto").checked?1:0,sync_qty:$("#agQty").checked?1:0}); m.textContent="Regras salvas. Valem na próxima varredura."; }catch(e){ m.textContent=errMsg(e); } };
+}
+$("#agRun").onclick=async()=>{ const b=$("#agRun"), m=$("#agMsg"); b.disabled=true; m.innerHTML=`<span class="spin"></span>Conferindo os anúncios com os fornecedores…`;
+  try{ const r=await pub({action:"sync",source:"site"}); m.textContent=r.auto?`Pronto: ${int(r.applied)} mudança(s) aplicada(s)${r.errors?`, ${int(r.errors)} com erro`:""}, ${int(r.pending)} para você decidir.`:`Pronto (modo revisão): ${int(r.pending)} mudança(s) para você decidir.`; await loadAgente(); }
+  catch(e){ m.textContent=errMsg(e); } finally{ b.disabled=false; } };
+
 /* ---------- fornecedores ---------- */
 let vendLoaded=false, vendF={q:"",st:"todos",tipo:"",km:"",uf:""}, vendOpen=null, vendShow=60;
 const VST=["a contatar","cotação pedida","aprovado","descartado"];
@@ -1501,7 +1578,7 @@ $("#lgForm").onsubmit=async e=>{ e.preventDefault(); const email=$("#lgEmail").v
   finally{ $("#lgBtn").disabled=false; } };
 async function logout(){ if(sb){ await sb.auth.signOut(); } await invalidateCache(); location.reload(); }
 // o link da extensão (#prod=ID) precisa sobreviver ao login por e-mail (que abre em outra aba)
-try{ const m=/#prod=(\d+)/.exec(location.hash); if(m) localStorage.setItem("opz-prod",m[1]); }catch(_){}
+try{ const m=/#prod=(\d+)/.exec(location.hash); if(m) localStorage.setItem("opz-prod",m[1]); if(/#agente/.test(location.hash)) localStorage.setItem("opz-prod","agente"); }catch(_){}
 mcpReady=(async()=>{
   try{ if(window.claude?.use){ mcp=await window.claude.use("mcp"); if(mcp){ MODE="mcp"; return; } } }catch(_){ mcp=null; }
   MODE="web";

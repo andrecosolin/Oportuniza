@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Oportuniza",
-  "version": "1.5.0",
-  "description": "Mostra vendas estimadas e concorrência no Mercado Livre e importa fornecedores do Quem Fornece para o seu Oportuniza.",
+  "version": "1.6.0",
+  "description": "Mostra vendas e concorrência no Mercado Livre, cria rascunhos de anúncio, importa fornecedores do Quem Fornece e varre o estoque da GoBoox para o seu Oportuniza.",
   "icons": {
     "48": "icon48.png",
     "128": "icon128.png"
@@ -45,6 +45,18 @@
       ],
       "js": [
         "qf.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://app.goboox.com.br/*"
+      ],
+      "js": [
+        "gbx.js"
       ],
       "css": [
         "content.css"

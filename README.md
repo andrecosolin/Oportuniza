@@ -16,6 +16,7 @@ Ferramenta pessoal para achar e validar produtos, comparar fornecedores, calcula
 | Produtos | Produtos candidatos com etapas, perfil (perene, sazonal, tendência), vários fornecedores, nota de 0 a 100 e recomendação |
 | Fornecedores | GoBoox, Quem Fornece, locais e atacadistas, com ficha, distância até Araraquara e situação |
 | Saúde | Cada anúncio com visitas, conversão, margem, preço mínimo e ideal, ação recomendada, atendimento e oportunidades |
+| Agente | Confere fornecedores com os anúncios do ML: pausa o que zerou, reativa o que voltou, avisa de preço no prejuízo e de produtos novos |
 | Financeiro | Margem antes de vender, resultado do período, custos fixos, lucro líquido e ponto de equilíbrio |
 | Minha conta | Anúncios, reputação, pedidos, chave da extensão e novo vínculo com o ML |
 
@@ -25,8 +26,8 @@ Ferramenta pessoal para achar e validar produtos, comparar fornecedores, calcula
 docs/                 página publicada no GitHub Pages (gerada)
 src/app.html          código da página (o mesmo arquivo roda como artifact no claude.ai)
 tools/build.py        gera docs/index.html a partir de src/app.html
-extension/            extensão do Chrome (Mercado Livre e Quem Fornece)
-supabase/functions/   Edge Functions: app (porta da página), ml, fin, saude, sup, pub (publicar no ML)
+extension/            extensão do Chrome (Mercado Livre, Quem Fornece e varredura da GoBoox)
+supabase/functions/   Edge Functions: app (porta da página), ml, fin, saude, sup, pub (publicar no ML e agente de estoque)
 supabase/migrations/  estrutura do banco (schema radar) e funções
 tools/bookmarklet-goboox.js  botão de favoritos que importa custos da GoBoox
 ```
