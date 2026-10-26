@@ -2,7 +2,7 @@ import postgres from "npm:postgres@3.4.4";
 
 // Porta de entrada da página web do Oportuniza (navegador comum, fora do claude.ai).
 // Só deixa passar o dono logado (Supabase Auth, e-mail em radar.config.owner_email)
-// e repassa a chamada para as funções internas (ml, fin, saude, pub) com a chave interna.
+// e repassa a chamada para as funções internas (ml, fin, saude, pub, alta) com a chave interna.
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false, max: 2 });
 const BASE = (Deno.env.get("SUPABASE_URL") ?? "https://dbikbgbgplosqwnovhvr.supabase.co") + "/functions/v1";
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, apikey, x-client-info, content-type", "access-control-allow-methods": "POST, OPTIONS" };
@@ -25,7 +25,7 @@ async function owner(req: Request) {
   return true;
 }
 
-const ROUTES = /^(niche|niches|search|product|fees|account|categories|status|finance|health|opps|service|intel|prod|pub)$/;
+const ROUTES = /^(niche|niches|search|product|fees|account|categories|status|finance|health|opps|service|intel|prod|pub|alta)$/;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
     const b = await req.json().catch(() => ({}));
     const route = String(b.route ?? ""), qs = String(b.qs ?? "");
     if (!ROUTES.test(route)) return json({ error: "rota inválida" }, 400);
-    if (route === "pub") {
-      const r = await fetch(`${BASE}/pub`, { method: "POST", headers: { "x-radar-key": await cfg("internal_key"), "content-type": "application/json" }, body: JSON.stringify(b.body ?? {}) });
+    if (route === "pub" || route === "alta") {
+      const r = await fetch(`${BASE}/${route}`, { method: "POST", headers: { "x-radar-key": await cfg("internal_key"), "content-type": "application/json" }, body: JSON.stringify(b.body ?? {}) });
       return new Response(await r.text(), { status: r.status, headers: { "content-type": "application/json", ...cors } });
     }
     const target = route === "finance" ? `${BASE}/fin` : ["health", "opps", "service", "intel", "prod"].includes(route) ? `${BASE}/saude/${route}` : `${BASE}/ml/${route}`;

@@ -11,7 +11,7 @@ Ferramenta pessoal para achar e validar produtos, comparar fornecedores, calcula
 | Aba | Para que serve |
 |---|---|
 | Pesquisar | Produtos do catálogo do ML, quantos vendedores disputam, faixa de preço, Full e Premium |
-| Nichos | Ranking de categorias (procura, vendas, oferta, oportunidade), descendo até os mais vendidos |
+| Nichos | **Em alta agora**: as 50 buscas em alta do ML (tendencias.mercadolivre.com.br) cruzadas com os mais vendidos, concorrência e GoBoox, em grupos (Explodindo, Cedo, Confirmado, Procura alta, Não vender) e com nota prática; foto diária às 6h20 com histórico. Abaixo, o ranking de categorias (avançado) |
 | Produto | Todos os vendedores de um produto, reputação, histórico de preço e simulador de margem |
 | Produtos | Produtos candidatos com etapas, perfil (perene, sazonal, tendência), vários fornecedores, nota de 0 a 100 e recomendação |
 | Fornecedores | GoBoox, Quem Fornece, locais e atacadistas, com ficha, distância até Araraquara e situação |

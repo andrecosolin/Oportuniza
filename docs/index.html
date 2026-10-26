@@ -235,6 +235,17 @@ table.imp td{vertical-align:middle} table.imp td.name{min-width:180px}
 .pc.flash{box-shadow:0 0 0 3px var(--accent)}
 .neg{color:var(--bad)}
 .agl{display:flex;flex-direction:column}
+.al-h{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.al-t{font:600 16px var(--f-body);color:var(--ink)}
+.al-m{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.al-m b{color:var(--ink);font-weight:600}
+.al-why{font-size:13px;color:var(--muted);margin:0}
+.al-sup{font-size:13px;background:var(--sunk);border-radius:8px;padding:6px 10px}
+.pill.g-explodindo{background:var(--act-soft);color:var(--act-text)} .pill.g-cedo{background:var(--good-soft);color:var(--good-text)}
+.pill.g-confirmado{background:var(--sunk);color:var(--ink)} .pill.g-procura_alta{background:var(--amber-soft);color:var(--amber)} .pill.g-nao_vender{background:var(--bad-soft);color:var(--bad)}
+.filt button[aria-pressed="true"] .muted{color:inherit;opacity:.75}
+details.adv>summary{cursor:pointer;list-style:none} details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary::before{content:"▸ ";color:var(--muted)} details.adv[open]>summary::before{content:"▾ "}
 .agc{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
 .agc:first-child{border-top:0}
 .agc-h{display:flex;gap:10px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
@@ -310,13 +321,23 @@ tr.vrow td{background:var(--bg)}
   <section id="v-nichos" role="tabpanel" aria-labelledby="tab-nichos" hidden>
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:flex-start">
-        <div><h1 id="lvTitle">Nichos</h1><p class="lead">Ranking dos nichos pela procura e pelas vendas, comparado com quantos anúncios já existem. Toque em um nicho para descer um nível e ver os produtos mais vendidos dele.</p></div>
+        <div><h1>Em alta agora</h1><p class="lead">As buscas em alta do Mercado Livre (as mesmas de tendencias.mercadolivre.com.br) cruzadas com os mais vendidos de cada categoria, a concorrência e a GoBoox. A nota pesa o que importa para quem está começando: ticket até R$ 200, pouca concorrência, sem marca forte e com fornecedor.</p></div>
+        <button class="btn" id="altaRef">Atualizar agora</button>
+      </div>
+      <div class="filt" id="altaF" style="margin-top:12px" role="group" aria-label="Filtrar por grupo"></div>
+      <p class="note" id="altaInfo" role="status"></p>
+    </div>
+    <div id="altaOut" style="margin-top:14px"><div class="state"><span class="spin"></span>Carregando…</div></div>
+    <details class="card adv" id="advNiches" style="margin-top:14px">
+      <summary><b>Explorar por categoria (avançado)</b> <span class="note">ranking de nichos e os 20 mais vendidos de cada categoria</span></summary>
+      <div class="row" style="justify-content:space-between;align-items:flex-start;margin-top:10px">
+        <div><h2 id="lvTitle">Nichos</h2><p class="note">Toque em um nicho para descer um nível e ver os produtos mais vendidos dele.</p></div>
         <button class="btn" id="lvRef">Atualizar dados</button>
       </div>
       <div class="crumbs" id="crumbs"></div>
-    </div>
-    <div id="rankOut" style="margin-top:14px"><div class="state"><span class="spin"></span>Carregando ranking…</div></div>
-    <div id="nicheOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+      <div id="rankOut" style="margin-top:14px"></div>
+      <div id="nicheOut" style="display:flex;flex-direction:column;gap:14px;margin-top:14px"></div>
+    </details>
   </section>
 
   <!-- PRODUTO -->
@@ -464,12 +485,13 @@ async function api(route, qs, opts={}){
   if(!r.ok||(j&&j.error)) throw {code:"api",message:String(j?.error||("erro "+r.status))};
   cset(key,j); return j;
 }
-async function pub(body){
+async function pub(body){ return post("pub",body); }
+async function post(route,body){
   await mcpReady;
-  if(MODE!=="web") throw {code:"api",message:"Publicar no ML funciona pelo site do Oportuniza (andrecosolin.github.io/Oportuniza)."};
+  if(MODE!=="web") throw {code:"api",message:"Isto funciona pelo site do Oportuniza (andrecosolin.github.io/Oportuniza)."};
   const {data:{session}}=await sb.auth.getSession();
   if(!session) throw {code:"login",message:"Entre com seu e-mail para usar o Oportuniza."};
-  const r=await fetch(SB_URL+"/functions/v1/app",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+session.access_token,apikey:SB_KEY},body:JSON.stringify({route:"pub",body})});
+  const r=await fetch(SB_URL+"/functions/v1/app",{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+session.access_token,apikey:SB_KEY},body:JSON.stringify({route,body})});
   let j; try{ j=await r.json(); }catch(_){ throw {code:"api",message:"Resposta inválida do servidor ("+r.status+")."}; }
   if(r.status===401) throw {code:"login",message:j?.error||"Sessão expirada. Entre de novo."};
   if(j&&j.error) throw {code:"api",message:String(j.error)};
@@ -496,7 +518,7 @@ const repW=l=>l?(parseInt(l)||0)*20:0;
 /* ---------- abas ---------- */
 const VIEWS=["pesquisa","nichos","produto","prods","vend","saude","agente","fin","conta"];
 function show(v){VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v;$("#tab-"+x).setAttribute("aria-selected",x===v)});
-  if(v==="nichos"&&!catsLoaded) loadCats(); if(v==="conta"&&!contaLoaded) loadConta(); if(v==="fin"&&!finLoaded) loadFin(); if(v==="saude"&&!healthLoaded) loadSaude(); if(v==="prods"&&!prodLoaded) loadProds(); if(v==="agente"&&!agLoaded) loadAgente(); if(v==="vend"&&!vendLoaded) loadVend(); window.scrollTo({top:0});}
+  if(v==="nichos"&&!altaLoaded) loadAlta(); if(v==="conta"&&!contaLoaded) loadConta(); if(v==="fin"&&!finLoaded) loadFin(); if(v==="saude"&&!healthLoaded) loadSaude(); if(v==="prods"&&!prodLoaded) loadProds(); if(v==="agente"&&!agLoaded) loadAgente(); if(v==="vend"&&!vendLoaded) loadVend(); window.scrollTo({top:0});}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
 /* ---------- pesquisa ---------- */
@@ -532,11 +554,74 @@ function compPill(n){ if(n==null) return ""; if(n<=5) return `<span class="pill 
 function med(a){a=a.filter(x=>x!=null&&!isNaN(x)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
 function bindCommon(root){
   root.querySelectorAll("[data-pid]").forEach(el=>el.onclick=ev=>{ev.stopPropagation();openProduct(el.dataset.pid)});
-  root.querySelectorAll("[data-cat]").forEach(el=>el.onclick=()=>{catsLoaded=true;show("nichos");
+  root.querySelectorAll("[data-cat]").forEach(el=>el.onclick=()=>{catsLoaded=true;show("nichos");$("#advNiches").open=true;
     $("#rankOut").innerHTML=`<div class="state"><b>Produtos da categoria escolhida abaixo</b><button class="btn" id="goRank" style="margin-top:8px">Ver ranking de nichos</button></div>`;
     $("#goRank").onclick=()=>openLevel("ROOT"); openNiche(el.dataset.cat)});
   root.querySelectorAll("[data-q]").forEach(el=>{ if(el.closest("#searchHints")) return; el.onclick=()=>{show("pesquisa");$("#q").value=el.dataset.q;doSearch(el.dataset.q)}});
 }
+
+/* ---------- em alta agora ---------- */
+let altaLoaded=false, altaData=null, altaG="voce";
+const GRP={explodindo:["Explodindo","busca crescendo e já entre os mais vendidos"],cedo:["Cedo","busca crescendo, ainda fora dos mais vendidos: dá para entrar antes"],confirmado:["Confirmado","muita procura e vendendo bem"],procura_alta:["Procura alta","muita busca, sem um produto claro no topo de vendas"],nao_vender:["Não vender","proibido, regulado ou não é produto"]};
+const LST={crescimento:"maior crescimento",desejada:"mais desejadas",popular:"mais populares"};
+async function loadAlta(){
+  altaLoaded=true; const out=$("#altaOut"); loading(out,"Lendo as buscas em alta de hoje…");
+  try{ altaData=await rpc("alta_latest"); renderAlta(); }
+  catch(e){ altaLoaded=false; fail(out,e,loadAlta); }
+}
+function renderAlta(){
+  const r=altaData||{}, items=r.items||[], out=$("#altaOut");
+  const cnt=g=>items.filter(x=>x.group===g).length;
+  const tabs=[["voce","Melhores para você",items.filter(x=>x.group!=="nao_vender").length]].concat(Object.keys(GRP).map(g=>[g,GRP[g][0],cnt(g)]));
+  $("#altaF").innerHTML=tabs.map(([g,l,n])=>`<button type="button" class="chip" data-g="${g}" aria-pressed="${g===altaG}">${esc(l)} <span class="muted">${n}</span></button>`).join("");
+  $("#altaF").querySelectorAll("button").forEach(b=>b.onclick=()=>{altaG=b.dataset.g;renderAlta()});
+  const when=r.updated_at?new Date(r.updated_at).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):null;
+  $("#altaInfo").textContent=r.day?`Foto de ${when||r.day} · ${int(r.days_tracked)} dia(s) de histórico · atualiza sozinho todo dia às 6h20. `+(altaG==="voce"?"Ordenado pela nota prática.":GRP[altaG][1]+"."):"";
+  if(!items.length){ out.innerHTML=`<div class="state"><b>Ainda não há foto das tendências</b>Toque em Atualizar agora.</div>`; return; }
+  const list=altaG==="voce"?items.filter(x=>x.group!=="nao_vender"):items.filter(x=>x.group===altaG);
+  out.innerHTML=`<div class="card">${list.length?list.map(altaRow).join(""):`<div class="state">Nada neste grupo hoje.</div>`}</div>`;
+  out.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>altaAdd(b));
+  out.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{show("pesquisa");$("#q").value=b.dataset.q;doSearch(b.dataset.q)});
+}
+const altaWhy=w=>!/nos mais vendidos|^pouca concorr|^tem na /.test(w);
+function altaRow(x){
+  const i=altaData.items.indexOf(x), bad=x.group==="nao_vender";
+  const age=x.new?`<span class="pill full">novo hoje</span>`:`<span class="pill">há ${x.days} dia${x.days>1?"s":""} no ranking</span>`;
+  const mv=x.prev_rank==null?"":x.prev_rank>x.rank?`<span class="mv up">▲${x.prev_rank-x.rank}</span>`:x.prev_rank<x.rank?`<span class="mv down">▼${x.rank-x.prev_rank}</span>`:"";
+  const cat=(x.path||[]).slice(-2).join(" › ")||x.category||"";
+  const q=encodeURIComponent(x.term), s=x.supplier;
+  return `<div class="agc">
+    <div class="al-h"><div><span class="al-t">${esc(x.term)}</span> <span class="pill g-${x.group}">${esc(GRP[x.group]?.[0]||x.group)}</span> ${age} ${mv} ${x.mine?`<span class="pill full">já está em Produtos</span>`:""}</div>
+      ${bad?"":`<span class="score ${x.score>=65?"s-quente":x.score>=40?"s-morno":"s-frio"}" title="Nota prática para o Oportuniza">${x.score}</span>`}</div>
+    <div class="al-m"><span>${x.rank}º em <b>${esc(LST[x.list]||x.list)}</b></span>${cat?`<span>${esc(cat)}</span>`:""}
+      ${x.best_rank?`<span><b>${x.best_rank}º</b> nos mais vendidos</span>`:""}
+      ${x.price!=null?`<span>preço típico <b>${brl(x.price)}</b></span>`:""}${x.sellers!=null?`<span><b>${int(x.sellers)}</b> vendedores</span>`:""}${x.full_pct!=null?`<span>Full ${pct(x.full_pct)}</span>`:""}</div>
+    ${bad?`<p class="al-why"><b>Por quê:</b> ${esc(x.blocked)}</p>`:(x.why||[]).filter(altaWhy).length?`<p class="al-why">${x.why.filter(altaWhy).map(esc).join(" · ")}</p>`:""}
+    ${s&&!bad?`<div class="al-sup">${esc(s.supplier)}: ${esc(String(s.title||"").slice(0,80))} · custo <b>${brl(s.cost)}</b>${s.margin_pct!=null?` · margem estimada <b>${pct(s.margin_pct)}</b>`:""} <span class="muted">(confira se é o mesmo produto)</span></div>`:""}
+    ${bad?"":`<div class="row">${x.mine?"":`<button class="btn sm pri" data-add="${i}">+ Produtos</button>`}<button class="btn sm" data-q="${esc(x.term)}">Pesquisar</button><a class="btn sm" href="${esc(x.url||"https://lista.mercadolivre.com.br/"+q)}" target="_blank" rel="noopener">Ver no ML</a><a class="btn sm" href="https://trends.google.com.br/trends/explore?geo=BR&date=today%205-y&q=${q}" target="_blank" rel="noopener" title="A extensão lê a busca e grava aqui">Google Trends</a><a class="btn sm" href="https://shopee.com.br/search?keyword=${q}" target="_blank" rel="noopener" title="A extensão lê a busca e grava aqui">Shopee</a><span class="note" role="status"></span></div>`}
+  </div>`;
+}
+async function altaAdd(b){
+  const x=altaData.items[+b.dataset.add]; if(!x) return; const msg=b.parentElement.querySelector(".note");
+  b.disabled=true; msg.textContent="Adicionando…";
+  try{
+    const pay={name:x.term.charAt(0).toUpperCase()+x.term.slice(1),ml_query:x.term};
+    if(x.category_id) pay.category_id=x.category_id;
+    if(x.product?.id&&/^MLB\d+$/.test(x.product.id)) pay.ml_product_id=x.product.id;
+    if(x.group==="explodindo"||x.group==="cedo") pay.kind="tendencia";
+    const r=await rpc("save_product",pay); x.mine=true; prodLoaded=false;
+    msg.innerHTML=`Adicionado. <button class="lnk" id="goP">Abrir em Produtos</button>`;
+    b.remove(); $("#goP").onclick=()=>{ prodDeep=Number(r?.id)||null; show("prods"); };
+  }catch(e){ msg.textContent=errMsg(e); b.disabled=false; }
+}
+$("#altaRef").onclick=async()=>{
+  const b=$("#altaRef"), out=$("#altaOut");
+  if(MODE!=="web"){ $("#altaInfo").textContent="Atualizar agora funciona pelo site do Oportuniza. Aqui a foto é a do agendamento diário."; return; }
+  b.disabled=true; loading(out,"Lendo as 50 buscas em alta, os mais vendidos de cada categoria e a concorrência (1 a 2 minutos)…");
+  try{ await post("alta",{action:"snapshot",only_snapshot:true}); altaData=await rpc("alta_latest"); renderAlta(); }
+  catch(e){ fail(out,e,()=>$("#altaRef").click()); } finally{ b.disabled=false; }
+};
+$("#advNiches").addEventListener("toggle",()=>{ if($("#advNiches").open&&!catsLoaded) loadCats(); });
 
 /* ---------- nichos ---------- */
 let catsLoaded=false, curLevel="ROOT";
