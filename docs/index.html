@@ -1481,7 +1481,8 @@ async function saveProd(p){
 
 /* ---------- fornecedores ---------- */
 let vendLoaded=false, vendF={q:"",st:"todos",tipo:"",km:"",uf:""}, vendOpen=null, vendShow=60;
-const VST=["a contatar","cotação pedida","aprovado","descartado"];
+const VST=[["sem análise","Sem análise"],["em análise","Em análise"],["reserva","Reserva (bom, mas não agora)"],["a contatar","A contatar"],["aguardando resposta","Aguardando resposta"],["cotação recebida","Cotação recebida"],["aguardando amostra","Aguardando amostra"],["aprovado","Aprovado"],["descartado","Descartado"]];
+const VST_CONTATO=["a contatar","aguardando resposta","cotação recebida","aguardando amostra"];
 async function loadVend(force){
   vendLoaded=true; const out=$("#vendList"); loading(out,"Carregando fornecedores…");
   try{ await loadVendCache(true); renderVend(); }catch(e){ vendLoaded=false; fail(out,e,()=>loadVend(true)); }
@@ -1497,11 +1498,11 @@ function renderVend(){
   const ufs=[...new Set(V.map(v=>v.uf).filter(Boolean))].sort();
   const cnt=s=>V.filter(v=>v.status===s).length;
   out.innerHTML=`
-    <div class="tiles"><div><span class="lbl">Fornecedores</span><strong>${int(V.length)}</strong><small>${int(V.filter(v=>v.source==="quemfornece").length)} do Quem Fornece</small></div><div><span class="lbl">Até 200 km</span><strong>${int(V.filter(v=>v.distance_km!=null&&v.distance_km<=200).length)}</strong><small>de Araraquara</small></div><div><span class="lbl">Dropshipping</span><strong>${int(V.filter(v=>v.dropship).length)}</strong><small>atendem sem estoque</small></div><div><span class="lbl">Aprovados</span><strong>${int(cnt("aprovado"))}</strong><small>${int(cnt("cotação pedida"))} com cotação pedida</small></div></div>
+    <div class="tiles"><div><span class="lbl">Fornecedores</span><strong>${int(V.length)}</strong><small>${int(V.filter(v=>v.source==="quemfornece").length)} do Quem Fornece</small></div><div><span class="lbl">Até 200 km</span><strong>${int(V.filter(v=>v.distance_km!=null&&v.distance_km<=200).length)}</strong><small>de Araraquara</small></div><div><span class="lbl">Dropshipping</span><strong>${int(V.filter(v=>v.dropship).length)}</strong><small>atendem sem estoque</small></div><div><span class="lbl">Em contato</span><strong>${int(VST_CONTATO.reduce((a,s)=>a+cnt(s),0))}</strong><small>${int(cnt("aprovado"))} aprovado(s) · ${int(cnt("sem análise"))} sem análise</small></div></div>
     <div class="card">
       <div class="vf">
         <div class="in"><input id="vfQ" placeholder="Buscar nome, cidade ou categoria" value="${esc(F.q)}" style="padding-left:9px;font-family:var(--f-body)"></div>
-        <select id="vfSt" class="sel"><option value="todos">Situação: todas</option>${VST.map(s=>`<option ${F.st===s?"selected":""}>${s}</option>`).join("")}</select>
+        <select id="vfSt" class="sel"><option value="todos">Situação: todas (menos descartados)</option>${VST.map(s=>`<option value="${s[0]}" ${F.st===s[0]?"selected":""}>${s[1]} (${int(cnt(s[0]))})</option>`).join("")}</select>
         <select id="vfT" class="sel"><option value="">Tipo: todos</option>${[["drop","Dropshipping"],["atac","Atacado"],["fab","Fabricante"],["imp","Importador"],["rev","Revenda online"]].map(t=>`<option value="${t[0]}" ${F.tipo===t[0]?"selected":""}>${t[1]}</option>`).join("")}</select>
         <select id="vfK" class="sel"><option value="">Distância: qualquer</option>${[100,200,400,800].map(k=>`<option value="${k}" ${String(F.km)===String(k)?"selected":""}>até ${k} km</option>`).join("")}</select>
         <select id="vfU" class="sel"><option value="">UF: todas</option>${ufs.map(u=>`<option ${F.uf===u?"selected":""}>${u}</option>`).join("")}</select>
@@ -1525,7 +1526,7 @@ function vendRow(v){
   return `<tr><td class="name">${v.website?`<a class="lnk" href="${esc(v.website)}" target="_blank" rel="noopener">${esc(v.name)}</a>`:esc(v.name)}${v.source==="quemfornece"?` <a class="pill" href="https://quemfornece.com/fornecedor/${esc(v.ext_id)}" target="_blank" rel="noopener">Quem Fornece ↗</a>`:""}${v.offers?` <span class="pill full">${v.offers} produto(s)</span>`:""}</td>
     <td data-l="Local">${v.city?esc(v.city)+"/"+esc(v.uf):"—"}${v.distance_km!=null?`<br><small class="muted">${int(v.distance_km)} km</small>`:""}</td>
     <td data-l="Tipo">${v.dropship?`<span class="pill full">dropshipping</span> `:""}${tp.filter(t=>!/dropshipping/i.test(t)).map(t=>`<span class="pill">${esc(t)}</span>`).join(" ")}</td>
-    <td data-l="Situação"><select class="sel sm" data-vst="${id}" aria-label="Situação de ${esc(v.name)}">${VST.map(s=>`<option ${v.status===s?"selected":""}>${s}</option>`).join("")}</select></td>
+    <td data-l="Situação"><select class="sel sm" data-vst="${id}" aria-label="Situação de ${esc(v.name)}">${VST.map(s=>`<option value="${s[0]}" ${v.status===s[0]?"selected":""}>${s[1]}</option>`).join("")}</select></td>
     <td><button class="btn sm" data-vop="${id}">${vendOpen===id?"Fechar":"Ficha"}</button></td></tr>
     ${vendOpen===id?`<tr class="vrow"><td colspan="5"><div id="ved_${id}"></div></td></tr>`:""}`;
 }
